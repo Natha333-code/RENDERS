@@ -6,15 +6,14 @@ automaticamente a partir da geometria do DWG (sem redesenho manual), então
 posições, dimensões e quantidades seguem o projeto.
 
 ## Resultado
-`renders_4k/` – versão atual, 3840×2160 (4K), com pessoas e bicicletas.
+`renders_4k/` – versão atual, 3840×2160 (4K), sem pessoas.
 `renders/` – primeira versão, 1920×1080.
 
 Revisão 2: piso tátil corrigido (placas sobrepostas no DWG causavam mancha
 preta), nova câmera do Espaço Pet (sem galhos na frente), vistas aéreas mais
-fechadas na praça (nova `aerea_oeste`), pessoas e bicicletas.
-
-Pessoas: recortes fotográficos de **Skalgubbar** (www.skalgubbar.se), de uso
-livre em visualizações de arquitetura. Bicicletas estacionadas: modelo 3D.
+fechadas na praça (nova `aerea_oeste`).  O módulo `build_people.py` (pessoas
+em recortes Skalgubbar + bicicletas 3D) existe mas está desligado
+(`--sem-pessoas`) a pedido do cliente.
 
 | Arquivo | Vista |
 |---|---|
