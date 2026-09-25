@@ -90,7 +90,7 @@ def build(S):
 
     E = 0.004  # afastamento anti z-fighting
     C.poly_mesh('ciclovia', S['ciclovia'], col, m_ciclo, z=E, thick=0.02, rim_mat=m_ciclo, step=0.5)
-    C.poly_mesh('ciclovia_centro', S['ciclovia_centro'], col, m_ciclo, z=E, step=0.5)
+    # (trecho central já contido no hatch 99415 da ciclovia)
     C.poly_mesh('ciclovia_travessia', S['ciclovia_travessia'], col, m_ciclo, z=E, zfun=z_ciclo_trav, step=0.25)
 
     # pavers dos caminhos, estares e contorno da quadra

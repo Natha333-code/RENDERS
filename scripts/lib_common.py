@@ -87,6 +87,11 @@ def poly_mesh(name, polys, col, mat=None, z=0.0, zfun=None, thick=0.0, step=1.0,
             geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
             bmesh.ops.bisect_plane(bm, geom=geom, plane_co=(x, 0, 0), plane_no=(1, 0, 0))
             x += step
+    bmesh.ops.dissolve_degenerate(bm, dist=1e-4, edges=bm.edges[:])
+    bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 4])
+    bad = [f for f in bm.faces if f.calc_area() < 1e-7]
+    if bad:
+        bmesh.ops.delete(bm, geom=bad, context='FACES')
     for v in bm.verts:
         v.co.z = (zfun(v.co.x, v.co.y) if zfun else zc_smooth(v.co.x)) + z
     for f in bm.faces:
