@@ -25,6 +25,9 @@ build_env.build(S)
 if '--sem-grama' not in FLAGS:
     import build_grass
     build_grass.build(S)
+if '--sem-pessoas' not in FLAGS:
+    import build_people
+    build_people.build(S)
 
 bpy.ops.wm.save_as_mainfile(filepath=OUT, compress=False)
 print('SALVO', OUT)

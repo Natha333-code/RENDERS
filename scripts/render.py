@@ -15,6 +15,8 @@ for c in cams:
     for o in bpy.data.objects:
         if o.name.startswith('grama_'):
             o.hide_render = (o.name != 'grama_' + c)
+        elif o.name.startswith('pessoa_'):
+            o.hide_render = not o.name.startswith('pessoa_' + c + '_')
     sc.render.filepath = os.path.join(out, c + '.png')
     bpy.ops.render.render(write_still=True)
     print('RENDER_OK', c, flush=True)

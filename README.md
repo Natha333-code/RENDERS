@@ -6,11 +6,20 @@ automaticamente a partir da geometria do DWG (sem redesenho manual), então
 posições, dimensões e quantidades seguem o projeto.
 
 ## Resultado
-`renders/` – imagens 1920×1080.
+`renders_4k/` – versão atual, 3840×2160 (4K), com pessoas e bicicletas.
+`renders/` – primeira versão, 1920×1080.
+
+Revisão 2: piso tátil corrigido (placas sobrepostas no DWG causavam mancha
+preta), nova câmera do Espaço Pet (sem galhos na frente), vistas aéreas mais
+fechadas na praça (nova `aerea_oeste`), pessoas e bicicletas.
+
+Pessoas: recortes fotográficos de **Skalgubbar** (www.skalgubbar.se), de uso
+livre em visualizações de arquitetura. Bicicletas estacionadas: modelo 3D.
 
 | Arquivo | Vista |
 |---|---|
 | aerea_geral.png | Vista aérea (drone) do lado oeste: Espaço Pet, quadra, estar, Food Parque |
+| aerea_oeste.png | Vista aérea do extremo oeste: Espaço Pet, quadra, estar |
 | aerea_leste.png | Vista aérea do lado leste: Garden, estar, Espaço Kids |
 | aerea_food.png | Food Parque visto do alto: paginação claro/escuro, palco, totem |
 | food_parque.png | Food Parque: bancos quadrados em alvenaria + jatobá com jerivás, palco |

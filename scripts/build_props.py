@@ -554,13 +554,19 @@ def piso_tatil(S, col):
     placas em grupo = alerta."""
     tiles = []
     for p in S['tatil']:
-        q = p[:4] if len(p) >= 4 else p
+        # contorno limpo: retângulo mínimo (alguns blocos têm vértice repetido)
+        rr = Polygon(p).buffer(0).minimum_rotated_rectangle
+        if rr.geom_type != 'Polygon' or rr.area < 0.02:
+            continue
+        q = list(rr.exterior.coords)[:4]
         cx = sum(a[0] for a in q) / 4
         cy = sum(a[1] for a in q) / 4
-        tiles.append((q, (cx, cy)))
+        if any(math.dist((cx, cy), t[1]) < 0.6 and rr.intersection(t[2]).area > 0.05 * rr.area for t in tiles):
+            continue  # placa sobreposta a outra (evita faces coplanares)
+        tiles.append((q, (cx, cy), rr))
     cents = [t[1] for t in tiles]
     groups = {'alerta': ([], [], []), 'direcional': ([], [], [])}
-    for i, (q, c) in enumerate(tiles):
+    for i, (q, c, _rr) in enumerate(tiles):
         nb = [cents[j] for j in range(len(tiles)) if j != i and math.dist(c, cents[j]) < 0.62]
         kind = 'alerta' if len(nb) >= 3 else 'direcional'
         if nb:
