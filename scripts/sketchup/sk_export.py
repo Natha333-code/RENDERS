@@ -136,6 +136,7 @@ def box_uv(p, n, s):
 
 def add_mesh(geo, ob, mat_world, depsgraph):
     """acrescenta a malha avaliada de `ob` transformada por mat_world."""
+    depsgraph = bpy.context.evaluated_depsgraph_get()
     ev = ob.evaluated_get(depsgraph)
     try:
         me = ev.to_mesh()
@@ -169,7 +170,7 @@ def lowpoly_tree(col, species, depsgraph, foliage_files):
     """col: coleção T_* (árvore Poly Haven). Retorna Geo leve."""
     geo = Geo('arvore_' + species)
     src = [o for o in col.all_objects if o.type == 'MESH'][0]
-    ev = src.evaluated_get(depsgraph)
+    ev = src.evaluated_get(bpy.context.evaluated_depsgraph_get())
     me = ev.to_mesh()
     mats = [s.material for s in ev.material_slots]
     bm = bmesh.new()
@@ -246,7 +247,7 @@ def comp_for(c):
         for o in c.all_objects:
             if o.type in ('MESH', 'CURVE'):
                 add_mesh(g, o, Matrix.Translation(-c.instance_offset) @ o.matrix_world, dg)
-        nice = next((v for k, v in COMPNAMES.items() if c.name.startswith(k)), c.name)
+        nice = next((COMPNAMES[k] for k in sorted(COMPNAMES, key=len, reverse=True) if c.name.startswith(k)), c.name)
         m = re.search(r'_(\d+)$', c.name)
         if m and not c.name.startswith('A_palet'):
             nice += ' ' + str(int(m.group(1)) % 10 + 1)

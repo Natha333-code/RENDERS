@@ -69,3 +69,9 @@ python3 scripts/gen_textures.py /home/user/assets/tex/gen
 blender -b --python scripts/build_scene.py -- dados/scene.json praca.blend
 blender -b praca.blend --python scripts/render.py -- renders aerea_geral,food_parque 1920 64
 ```
+
+## Modelo SketchUp
+`sketchup/Praca_Linear_SketchUp.zip` – modelo 3D para SketchUp (COLLADA .dae +
+texturas + script `organizar_praca.rb` que cria Tags, cenas, geolocalização e
+salva o .skp). Instruções em `LEIA-ME.txt` dentro do zip.
+Gerado por `scripts/sketchup/` (sk_tree_textures.py → sk_textures.py → sk_export.py).
