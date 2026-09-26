@@ -1,0 +1,112 @@
+# encoding: UTF-8
+# ---------------------------------------------------------------------------
+#  Praça Linear - Loteamento Reserva das Araucárias (Passo Fundo/RS)
+#  Organiza o modelo importado do arquivo praca_linear.dae no SketchUp:
+#   * posiciona na origem e explode o contêiner de importação
+#   * cria Tags (camadas) por categoria e por espécie
+#   * suaviza as arestas de triangulação (visual limpo)
+#   * geolocaliza em Passo Fundo, com norte do projeto e sombras
+#   * cria Cenas com os mesmos pontos de vista dos renders
+#   * salva como .skp ao lado deste script
+#
+#  Uso: 1) Arquivo > Importar > praca_linear.dae (clique na origem para posicionar)
+#       2) Extensões > Ruby Console:  load 'C:/caminho/organizar_praca.rb'
+#          (ou Janela > Ruby Console, cole o caminho do arquivo)
+# ---------------------------------------------------------------------------
+module PracaLinear
+  CAMERAS = [
+%%CAMERAS%%
+  ]
+
+  def self.run
+    model = Sketchup.active_model
+    model.start_operation('Organizar Praça Linear', true)
+    ents = model.active_entities
+    alvo = ents.grep(Sketchup::ComponentInstance).max_by { |i| i.bounds.diagonal }
+    alvo ||= ents.grep(Sketchup::Group).max_by { |g| g.bounds.diagonal }
+    unless alvo
+      UI.messagebox('Importe primeiro o arquivo praca_linear.dae (Arquivo > Importar).')
+      return
+    end
+    alvo.transformation = Geom::Transformation.new
+    partes = alvo.explode.select { |e| e.respond_to?(:definition) || e.is_a?(Sketchup::Group) }
+    # o nó raiz "Praca Linear" pode vir como mais um nível
+    raiz = partes.find { |e| (e.respond_to?(:name) && e.name.to_s =~ /Praca Linear/) ||
+                             (e.respond_to?(:definition) && e.definition.name =~ /Praca Linear/) }
+    partes = raiz.explode.select { |e| e.respond_to?(:definition) || e.is_a?(Sketchup::Group) } if raiz
+
+    layers = model.layers
+    partes.each do |grp|
+      nome = grp.respond_to?(:name) && !grp.name.to_s.empty? ? grp.name : grp.definition.name
+      tag = layers.add(nome)
+      grp.layer = tag
+      grp.name = nome if grp.respond_to?(:name=)
+      ents_g = grp.respond_to?(:definition) ? grp.definition.entities : grp.entities
+      ents_g.grep(Sketchup::ComponentInstance).each do |ci|
+        especie = ci.definition.name.sub(/\s*\d+\s*\z/, '').sub(/#\d+\z/, '')
+        ci.layer = layers.add("#{nome} - #{especie}")
+      end
+      ents_g.grep(Sketchup::Group).each do |g2|
+        g2.layer = tag
+      end
+    end
+
+    # arestas de triangulação: suavizar onde as faces são quase coplanares
+    suav = lambda do |entities, ang|
+      entities.grep(Sketchup::Edge).each do |e|
+        f = e.faces
+        next unless f.size == 2
+        if f[0].normal.angle_between(f[1].normal) < ang
+          e.soft = true
+          e.smooth = true
+        end
+      end
+    end
+    model.definitions.each do |d|
+      next if d.image?
+      veg = d.name =~ /Arvore|Quaresmeira|Extremosa|Manaca|Jabuticabeira|Ipe|Jeriva|Araucaria|Moreia|Bela/i
+      suav.call(d.entities, veg ? 3.2 : 0.35)
+      d.entities.grep(Sketchup::Edge).each { |e| e.hidden = true if veg && e.faces.size < 2 }
+    end
+    suav.call(model.entities, 0.35)
+
+    # geolocalização e sombras (tarde de primavera, ~15h)
+    begin
+    si = model.shadow_info
+    si['City'] = 'Passo Fundo'
+    si['Country'] = 'Brasil'
+    si['Latitude'] = -28.2624
+    si['Longitude'] = -52.4064
+    si['TZOffset'] = -3.0
+    si['NorthAngle'] = 315.0   # norte do projeto (rosa-dos-ventos da prancha) a 45° à esquerda do eixo Y
+    si['DisplayNorth'] = true
+    si['ShadowTime'] = Time.utc(2026, 10, 15, 18, 0, 0)
+    si['DisplayShadows'] = true
+    si['UseSunForAllShading'] = true
+    si['Light'] = 80
+    si['Dark'] = 45
+    rescue StandardError => e
+      puts "Aviso (sombras/geolocalização): #{e.message}"
+    end
+
+    # cenas com os pontos de vista dos renders
+    model.pages.to_a.each { |p| model.pages.erase(p) }
+    CAMERAS.each do |nome, eye, tgt, fov|
+      cam = Sketchup::Camera.new(Geom::Point3d.new(eye[0].m, eye[1].m, eye[2].m),
+                                 Geom::Point3d.new(tgt[0].m, tgt[1].m, tgt[2].m), Z_AXIS, true, fov)
+      model.active_view.camera = cam
+      model.pages.add(nome.tr('_', ' ').capitalize)
+    end
+    begin
+      model.rendering_options['DisplayColorByLayer'] = false
+    rescue StandardError
+      nil
+    end
+    model.commit_operation
+
+    arq = File.join(File.dirname(__FILE__), 'Praca_Linear_Reserva_das_Araucarias.skp')
+    model.save(arq)
+    UI.messagebox("Modelo organizado e salvo em:\n#{arq}")
+  end
+end
+PracaLinear.run
