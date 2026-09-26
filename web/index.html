@@ -1,0 +1,369 @@
+<title>Praça Linear Araucárias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<style>
+:root{
+  --paper:#eef1ec; --panel:#f7f8f5; --ink:#1d2622; --ink-2:#4d5a53; --line:#cfd6cf;
+  --pine:#1f4d3a; --pine-soft:#dfe9e2; --ipe:#d9a514; --cic:#b7362b;
+  --shadow:0 10px 30px rgba(20,35,28,.18);
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#121614; --panel:#18201c; --ink:#e3e9e4; --ink-2:#a3b1a8; --line:#2c3831;
+    --pine:#7fc2a0; --pine-soft:#223a2e; --ipe:#e6b93a; --cic:#e0675b; --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#121614; --panel:#18201c; --ink:#e3e9e4; --ink-2:#a3b1a8; --line:#2c3831;
+  --pine:#7fc2a0; --pine-soft:#223a2e; --ipe:#e6b93a; --cic:#e0675b; --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);overflow:hidden}
+#app{position:relative;height:100%;width:100%}
+#view{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none;outline:none}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.tag{font:500 11px/1 var(--mono);color:#fff;background:rgba(18,32,25,.78);border:1px solid rgba(255,255,255,.25);
+  padding:5px 7px;border-radius:3px;white-space:nowrap;transform:translate(-50%,-100%);letter-spacing:.02em}
+.tag b{color:var(--ipe);font-weight:500;margin-right:6px}
+
+/* painel */
+#panel{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  width:min(320px,calc(100% - 24px));background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;overflow:hidden}
+#panel header{padding:16px 18px 12px;border-bottom:1px solid var(--line);display:grid;gap:4px}
+.eyebrow{font:500 10.5px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--pine)}
+h1{margin:0;font:600 22px/1.12 var(--cond);letter-spacing:-.01em;text-wrap:balance}
+.meta{font:400 11.5px/1.4 var(--mono);color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 12px}
+#scroll{overflow:auto;padding:6px 18px 18px;display:grid;gap:18px;align-content:start}
+section h2{margin:12px 0 8px;font:500 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);
+  display:flex;justify-content:space-between;align-items:center}
+.views{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.views button{font:500 12.5px/1.2 var(--sans);text-align:left;padding:8px 9px;border-radius:4px;border:1px solid var(--line);
+  background:transparent;color:var(--ink);cursor:pointer;display:grid;gap:2px}
+.views button small{font:400 10px/1 var(--mono);color:var(--ink-2);letter-spacing:.04em}
+.views button:hover{border-color:var(--pine)}
+.views button[aria-pressed="true"]{background:var(--pine);border-color:var(--pine);color:var(--panel)}
+.views button[aria-pressed="true"] small{color:var(--pine-soft)}
+button:focus-visible,input:focus-visible,label:focus-within{outline:2px solid var(--ipe);outline-offset:2px}
+.layers{display:grid;gap:2px}
+.layers label{display:flex;align-items:center;gap:10px;padding:7px 2px;cursor:pointer;font-size:13px;border-bottom:1px dashed var(--line)}
+.layers label:last-child{border-bottom:0}
+.layers input{accent-color:var(--pine);width:16px;height:16px;margin:0}
+.layers .sw{width:10px;height:10px;border-radius:2px;flex:none}
+.sun{display:grid;gap:8px}
+.sun-row{display:flex;align-items:center;gap:10px}
+.sun-row input[type=range]{flex:1;accent-color:var(--ipe)}
+.time{font:500 13px/1 var(--mono);font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
+.help{font:400 11.5px/1.5 var(--sans);color:var(--ink-2);display:grid;gap:3px}
+.help kbd{font:500 10.5px/1 var(--mono);padding:2px 5px;border:1px solid var(--line);border-radius:3px;background:var(--paper);color:var(--ink)}
+.note{font:400 10.5px/1.45 var(--mono);color:var(--ink-2)}
+#toggle{display:none}
+
+/* carregamento */
+#loading{position:absolute;inset:0;display:grid;place-items:center;background:var(--paper);z-index:5;transition:opacity .6s}
+#loading.done{opacity:0;pointer-events:none}
+.ld{display:grid;gap:10px;width:min(320px,80%);text-align:left}
+.ld .bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.ld .bar i{display:block;height:100%;width:0;background:var(--pine);transition:width .2s}
+.ld p{margin:0;font:400 12px/1.4 var(--mono);color:var(--ink-2)}
+
+@media (max-width:640px){
+  #panel{top:auto;left:0;right:0;bottom:0;width:100%;height:auto;max-height:62%;border-radius:10px 10px 0 0;
+    padding-bottom:env(safe-area-inset-bottom,0px);transition:transform .3s}
+  #panel.closed{transform:translateY(calc(100% - 64px - env(safe-area-inset-bottom,0px)))}
+  #toggle{display:block;position:absolute;right:14px;top:14px;font:500 11px/1 var(--mono);padding:7px 9px;border-radius:4px;
+    border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+  #panel header{padding-right:90px}
+}
+@media (prefers-reduced-motion:reduce){#loading,#panel{transition:none}}
+</style>
+
+<div id="app">
+  <canvas id="view" tabindex="0" aria-label="Modelo 3D da Praça Linear"></canvas>
+  <div id="labels" aria-hidden="true"></div>
+
+  <aside id="panel">
+    <header>
+      <span class="eyebrow">Parque Linear · Canteiro Central da Av. A</span>
+      <h1>Praça Linear — Reserva das Araucárias</h1>
+      <div class="meta"><span>Passo Fundo / RS</span><span>6.313,70 m²</span><span>cotas 621,15 → 612,15</span></div>
+      <button id="toggle" type="button" aria-expanded="true">Ocultar</button>
+    </header>
+    <div id="scroll">
+      <section>
+        <h2>Vistas</h2>
+        <div class="views" id="views"></div>
+      </section>
+      <section>
+        <h2>Camadas</h2>
+        <div class="layers" id="layers">
+          <label><input type="checkbox" id="ly-pisos" data-node="Pisos e pavimentos" checked><span class="sw" style="background:#9aa39c"></span>Pisos e pavimentos</label>
+          <label><input type="checkbox" id="ly-mob" data-node="Mobiliario e equipamentos" checked><span class="sw" style="background:#7a4a2a"></span>Mobiliário e equipamentos</label>
+          <label><input type="checkbox" id="ly-pais" data-node="Paisagismo" checked><span class="sw" style="background:#8a4bb0"></span>Paisagismo (projeto)</label>
+          <label><input type="checkbox" id="ly-mata" data-node="Vegetacao existente" checked><span class="sw" style="background:#2e5a3c"></span>Mata existente (ELUP 01)</label>
+          <label><input type="checkbox" id="ly-set" checked><span class="sw" style="background:var(--ipe)"></span>Setores do memorial (A–K)</label>
+        </div>
+      </section>
+      <section class="sun">
+        <h2>Sol · 15 de outubro <span class="time" id="tlabel">15:00</span></h2>
+        <div class="sun-row"><span class="note">07h</span><input type="range" id="hour" min="7" max="18.5" step="0.25" value="15" aria-label="Hora do dia"><span class="note">18h30</span></div>
+        <div class="layers"><label><input type="checkbox" id="shadows" checked>Sombras</label></div>
+      </section>
+      <section>
+        <h2>Navegação</h2>
+        <div class="help">
+          <span><kbd>arrastar</kbd> girar em torno do ponto</span>
+          <span><kbd>botão direito</kbd> / <kbd>2 dedos</kbd> deslocar</span>
+          <span><kbd>roda</kbd> / <kbd>pinça</kbd> aproximar</span>
+          <span><kbd>duplo clique</kbd> centralizar no ponto clicado</span>
+        </div>
+      </section>
+      <p class="note">Geometria extraída do DWG PAL-RRA-URB-R10 e do memorial descritivo de 09/09/26. Modelo em versão leve para navegação: as árvores são simplificadas em relação aos renders.</p>
+    </div>
+  </aside>
+
+  <div id="loading"><div class="ld">
+    <span class="eyebrow">Carregando modelo</span>
+    <div class="bar"><i id="bar"></i></div>
+    <p id="ldtxt">Geometria e texturas · ~29 MB</p>
+  </div></div>
+</div>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { Sky } from 'three/addons/objects/Sky.js';
+
+// coordenadas do projeto (Blender: x ao longo da praça, y transversal, z para cima) -> three (x, z, -y)
+const P = (x, y, z) => new THREE.Vector3(x, z, -y);
+
+const VIEWS = [
+  ['aerea_geral', 'Aérea geral', 'drone · oeste', [-190, -65, 70], [-172.933, -58.066, 62.213]],
+  ['aerea_oeste', 'Aérea oeste', 'Pet · quadra', [-178, -32, 26], [-160.698, -23.792, 20.233]],
+  ['aerea_food', 'Food Parque', 'vista do alto', [6.5, -33, 20], [6.5, -15.916, 9.601]],
+  ['aerea_leste', 'Aérea leste', 'Garden · Kids', [40, -40, 24], [55.666, -30.426, 16.068]],
+  ['food_parque', 'Palco e bancos', 'Food Parque', [-7.5, -6.5, 1.65], [10.102, 2.978, 1.063]],
+  ['palco_totem', 'Totem', 'Av. H', [4.5, -22.5, 1.6], [7.787, -2.778, 1.107]],
+  ['estar_ipe', 'Estar do ipê', 'setor D', [-49.5, -3.6, 1.6], [-65.964, 7.755, 1.6]],
+  ['quadra_areia', 'Quadra de areia', 'setor H', [-80.5, -6.5, 1.7], [-98.038, 3.066, 0.743]],
+  ['espaco_pet', 'Espaço Pet', 'setor E', [-157, -15, 1.7], [-154.036, 4.763, 0.909]],
+  ['espaco_kids', 'Espaço Kids', 'setor C', [145, 1.8, -7.334], [164.136, 7.577, -7.995]],
+  ['caminho_garden', 'Garden', 'setor J', [82, 6, -1.313], [101.824, 7.802, -3.254]],
+  ['vista_ciclovia', 'Ciclovia', 'setor A', [-30, 11.6, 1.65], [-49.998, 11.45, 1.438]],
+  ['vista_trilha', 'Trilha', 'setor K', [204, -13.5, -8.975], [184.111, -11.406, -8.739]],
+];
+const SECTORS = [
+  ['A', 'Ciclovia bidirecional', -118, 11.4, 0], ['B', 'Bicicletários', -51, 8.9, 0], ['C', 'Espaço Kids', 156.4, 3.3, -9],
+  ['D', 'Estar', -58.2, 2.4, 0], ['D', 'Estar', 71.5, 1.9, -3.2], ['E', 'Espaço Pet', -153.1, 3.3, 0],
+  ['F', 'Palco', 6.6, 1.4, 0.2], ['G', 'Food Parque', -14, 4, 0], ['H', 'Quadra de areia', -96.2, 1.4, 0],
+  ['I', 'Arquibancadas', -96.2, 9.7, 0], ['J', 'Garden', 104, 8, -5.6], ['K', 'Trilha', 195, 5, -9.5],
+];
+
+const canvas = document.getElementById('view');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.55;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 6000);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.maxPolarAngle = Math.PI * 0.495;
+controls.minDistance = 1.5;
+controls.maxDistance = 900;
+controls.screenSpacePanning = true;
+
+// céu e sol
+const sky = new Sky();
+sky.scale.setScalar(4500);
+scene.add(sky);
+const su = sky.material.uniforms;
+su.turbidity.value = 4; su.rayleigh.value = 1.2; su.mieCoefficient.value = 0.004; su.mieDirectionalG.value = 0.8;
+const sun = new THREE.DirectionalLight(0xfff2de, 3.2);
+sun.castShadow = true;
+sun.shadow.mapSize.set(4096, 4096);
+const sc = sun.shadow.camera;
+sc.left = -230; sc.right = 230; sc.top = 60; sc.bottom = -60; sc.near = 10; sc.far = 900;
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04;
+scene.add(sun, sun.target);
+const hemi = new THREE.HemisphereLight(0xcfe0f2, 0x55614a, 0.9);
+scene.add(hemi);
+scene.fog = new THREE.Fog(0xc9d6e2, 350, 2200);
+const pmrem = new THREE.PMREMGenerator(renderer);
+let envRT = null;
+
+// posição do sol - Passo Fundo (lat -28,26°), 15/out (declinação ≈ -8,5°), norte da prancha a 135° no plano
+const LAT = -28.26 * Math.PI / 180, DEC = -8.5 * Math.PI / 180;
+const N = new THREE.Vector2(-Math.SQRT1_2, Math.SQRT1_2), E = new THREE.Vector2(Math.SQRT1_2, Math.SQRT1_2);
+function setSun(hour) {
+  const h = (hour - 12) * 15 * Math.PI / 180;
+  const el = Math.asin(Math.sin(LAT) * Math.sin(DEC) + Math.cos(LAT) * Math.cos(DEC) * Math.cos(h));
+  let az = Math.atan2(-Math.sin(h), Math.tan(DEC) * Math.cos(LAT) - Math.sin(LAT) * Math.cos(h)); // a partir do norte, sentido horário
+  const hz = N.clone().multiplyScalar(Math.cos(az)).add(E.clone().multiplyScalar(Math.sin(az)));
+  const d = P(hz.x * Math.cos(el), hz.y * Math.cos(el), Math.sin(el)).normalize();
+  su.sunPosition.value.copy(d);
+  sun.position.copy(d.clone().multiplyScalar(450)).add(P(0, 0, 0));
+  sun.target.position.copy(P(0, 0, 0));
+  const k = THREE.MathUtils.clamp(Math.sin(el) * 2.2, 0, 1);
+  sun.intensity = 3.2 * k;
+  sun.color.setHSL(0.09, 0.6 * (1 - k) + 0.2, 0.62 + 0.28 * k);
+  hemi.intensity = 0.35 + 0.6 * k;
+  if (envRT) envRT.dispose();
+  envRT = pmrem.fromScene(sky, 0, 0.1, 5000);
+  scene.environment = envRT.texture;
+  const hh = Math.floor(hour), mm = Math.round((hour - hh) * 60);
+  document.getElementById('tlabel').textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
+// rótulos dos setores
+const labelsEl = document.getElementById('labels');
+const labelObjs = SECTORS.map(([l, t, x, y, z]) => {
+  const el = document.createElement('div');
+  el.className = 'tag';
+  el.innerHTML = `<b>${l}</b>${t}`;
+  labelsEl.appendChild(el);
+  return { el, p: P(x, y, z + 4.5) };
+});
+let showLabels = true;
+const v = new THREE.Vector3();
+function updateLabels() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  for (const o of labelObjs) {
+    v.copy(o.p).project(camera);
+    const vis = showLabels && v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && camera.position.distanceTo(o.p) < 420;
+    o.el.hidden = !vis;
+    if (vis) o.el.style.transform = `translate(${(v.x * 0.5 + 0.5) * w}px, ${(-v.y * 0.5 + 0.5) * h}px) translate(-50%,-100%)`;
+  }
+}
+
+// vistas
+const viewsEl = document.getElementById('views');
+let anim = null;
+function goView(i, instant) {
+  const [id, name, sub, eye, tgt] = VIEWS[i];
+  const e = P(...eye), t = P(...tgt);
+  [...viewsEl.children].forEach((b, k) => b.setAttribute('aria-pressed', k === i ? 'true' : 'false'));
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (instant || reduce) { camera.position.copy(e); controls.target.copy(t); controls.update(); return; }
+  anim = { t0: performance.now(), dur: 1400, e0: camera.position.clone(), t0v: controls.target.clone(), e, t };
+}
+VIEWS.forEach((vw, i) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.id = 'v-' + vw[0];
+  b.innerHTML = `${vw[1]}<small>${vw[2]}</small>`;
+  b.addEventListener('click', () => goView(i));
+  viewsEl.appendChild(b);
+});
+controls.addEventListener('start', () => { anim = null; [...viewsEl.children].forEach(b => b.setAttribute('aria-pressed', 'false')); });
+
+// modelo
+const bar = document.getElementById('bar'), ldtxt = document.getElementById('ldtxt');
+const manager = new THREE.LoadingManager();
+manager.onProgress = (url, n, total) => { bar.style.width = (100 * n / total).toFixed(0) + '%'; };
+const draco = new DRACOLoader(manager);
+draco.setDecoderPath('./draco/');
+const loader = new GLTFLoader(manager);
+loader.setDRACOLoader(draco);
+const groups = {};
+let model = null;
+loader.load('./modelo/praca.json', (g) => {
+  model = g.scene;
+  model.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.receiveShadow = true;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        if (m.map) { m.map.anisotropy = 8; }
+        if (m.alphaTest > 0) { m.side = THREE.DoubleSide; }
+        m.envMapIntensity = 0.7;
+      }
+    }
+    if (o.name && ['Pisos e pavimentos', 'Mobiliario e equipamentos', 'Paisagismo', 'Vegetacao existente'].includes(o.name.replace(/_/g, ' '))) {
+      groups[o.name.replace(/_/g, ' ')] = o;
+    }
+  });
+  // pisos: recebem sombra, não projetam (mais leve)
+  if (groups['Pisos e pavimentos']) groups['Pisos e pavimentos'].traverse(o => { if (o.isMesh) o.castShadow = false; });
+  scene.add(model);
+  document.getElementById('loading').classList.add('done');
+}, undefined, (err) => {
+  ldtxt.textContent = 'Não foi possível carregar o modelo. Recarregue a página.';
+  console.error(err);
+});
+
+// camadas
+document.querySelectorAll('#layers input[data-node]').forEach((inp) => {
+  inp.addEventListener('change', () => { const g = groups[inp.dataset.node]; if (g) g.visible = inp.checked; });
+});
+document.getElementById('ly-set').addEventListener('change', (e) => { showLabels = e.target.checked; });
+const hour = document.getElementById('hour');
+hour.addEventListener('input', () => setSun(parseFloat(hour.value)));
+document.getElementById('shadows').addEventListener('change', (e) => { sun.castShadow = e.target.checked; });
+
+// duplo clique: centralizar
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+canvas.addEventListener('dblclick', (ev) => {
+  if (!model) return;
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObject(model, true)[0];
+  if (hit) {
+    const off = camera.position.clone().sub(controls.target);
+    anim = { t0: performance.now(), dur: 700, e0: camera.position.clone(), t0v: controls.target.clone(), e: hit.point.clone().add(off), t: hit.point.clone() };
+  }
+});
+
+// painel no celular
+const panel = document.getElementById('panel'), tg = document.getElementById('toggle');
+tg.addEventListener('click', () => {
+  const closed = panel.classList.toggle('closed');
+  tg.textContent = closed ? 'Mostrar' : 'Ocultar';
+  tg.setAttribute('aria-expanded', String(!closed));
+});
+
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+setSun(15);
+goView(0, true);
+
+const ease = (x) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+renderer.setAnimationLoop(() => {
+  if (anim) {
+    const k = Math.min(1, (performance.now() - anim.t0) / anim.dur), e = ease(k);
+    camera.position.lerpVectors(anim.e0, anim.e, e);
+    controls.target.lerpVectors(anim.t0v, anim.t, e);
+    if (k >= 1) anim = null;
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  updateLabels();
+});
+</script>

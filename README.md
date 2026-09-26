@@ -75,3 +75,8 @@ blender -b praca.blend --python scripts/render.py -- renders aerea_geral,food_pa
 texturas + script `organizar_praca.rb` que cria Tags, cenas, geolocalização e
 salva o .skp). Instruções em `LEIA-ME.txt` dentro do zip.
 Gerado por `scripts/sketchup/` (sk_tree_textures.py → sk_textures.py → sk_export.py).
+
+## Modelo 3D interativo (navegador)
+`web/` – visualizador three.js (glTF + Draco) gerado por `scripts/sketchup/web_export.py`.
+Publicado como página: vistas dos renders, camadas, setores A–K do memorial e sol por hora do dia.
+Para abrir localmente: `cd web && python3 -m http.server` e acesse http://localhost:8000.
