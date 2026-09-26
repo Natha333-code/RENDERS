@@ -2,6 +2,7 @@
 import bpy, bmesh, math, random
 from mathutils import Vector, Matrix
 from shapely.geometry import Polygon, LineString, Point
+from shapely.ops import unary_union
 import lib_common as C
 import lib_materials as M
 from lib_common import zc_smooth as Z
@@ -548,6 +549,54 @@ def garden(S, m, col):
             k += 1
 
 
+def align_tiles(tiles, s=0.4):
+    """Alinha as placas ortogonais de cada trecho numa grade única de 40 cm
+    (no DWG algumas faixas estão 8 cm deslocadas, gerando degraus nos cantos)
+    e remove placas diagonais que invadem os blocos de alerta ortogonais."""
+    from collections import Counter
+    def ortho(q):
+        a = math.degrees(math.atan2(q[1][1] - q[0][1], q[1][0] - q[0][0])) % 90
+        return a < 1.5 or a > 88.5
+    ort = [t for t in tiles if ortho(t[0])]
+    diag = [t for t in tiles if not ortho(t[0])]
+    # componentes conectados de placas ortogonais
+    n = len(ort); comp = list(range(n))
+    def f(i):
+        while comp[i] != i:
+            comp[i] = comp[comp[i]]; i = comp[i]
+        return i
+    for i in range(n):
+        for j in range(i + 1, n):
+            if math.dist(ort[i][1], ort[j][1]) < 0.62:
+                comp[f(i)] = f(j)
+    groups = {}
+    for i in range(n):
+        groups.setdefault(f(i), []).append(ort[i])
+    out = []
+    for g in groups.values():
+        ax = Counter(round(t[1][0] % s, 2) for t in g).most_common(1)[0][0]
+        ay = Counter(round(t[1][1] % s, 2) for t in g).most_common(1)[0][0]
+        seen = set()
+        for t in g:
+            cx = ax + round((t[1][0] - ax) / s) * s
+            cy = ay + round((t[1][1] - ay) / s) * s
+            k = (round(cx, 2), round(cy, 2))
+            if k in seen:
+                continue
+            seen.add(k)
+            rr = Polygon(C.rect(cx, cy, s, s))
+            out.append((list(rr.exterior.coords)[:4], (cx, cy), rr))
+    ortu = unary_union([t[2] for t in out]) if out else None
+    kept = []
+    for t in diag:
+        low = ortu is not None and t[2].intersection(ortu).area > 0.001
+        if any(t[2].intersection(k[2]).area > 0.6 * t[2].area for k in kept):
+            continue
+        kept.append((t[0], t[1], t[2], low))
+    out = [(o[0], o[1], o[2], False) for o in out] + kept
+    return out
+
+
 def piso_tatil(S, col):
     """Piso tátil (NBR 16537) - placas 40 x 40 cm do bloco 'piso tatik'.
     Placas em linha = direcional (barras no sentido do caminho);
@@ -561,12 +610,17 @@ def piso_tatil(S, col):
         q = list(rr.exterior.coords)[:4]
         cx = sum(a[0] for a in q) / 4
         cy = sum(a[1] for a in q) / 4
-        if any(math.dist((cx, cy), t[1]) < 0.6 and rr.intersection(t[2]).area > 0.05 * rr.area for t in tiles):
+        ang = math.degrees(math.atan2(q[1][1] - q[0][1], q[1][0] - q[0][0])) % 90
+        diag_t = 1.5 < ang < 88.5
+        lim = 0.6 if diag_t else 0.05   # diagonais encavaladas no DWG: só remove duplicatas
+        if any(math.dist((cx, cy), t[1]) < 0.6 and abs(ang - t[3]) < 2 and rr.intersection(t[2]).area > lim * rr.area
+               for t in tiles):
             continue  # placa sobreposta a outra (evita faces coplanares)
-        tiles.append((q, (cx, cy), rr))
+        tiles.append((q, (cx, cy), rr, ang))
+    tiles = align_tiles(tiles)
     cents = [t[1] for t in tiles]
     groups = {'alerta': ([], [], []), 'direcional': ([], [], [])}
-    for i, (q, c, _rr) in enumerate(tiles):
+    for i, (q, c, _rr, low) in enumerate(tiles):
         nb = [cents[j] for j in range(len(tiles)) if j != i and math.dist(c, cents[j]) < 0.62]
         kind = 'alerta' if len(nb) >= 3 else 'direcional'
         if nb:
@@ -583,7 +637,7 @@ def piso_tatil(S, col):
         V, F, U = groups[kind]
         k = len(V)
         for (x, y) in q:
-            V.append((x, y, Z(x) + 0.009))
+            V.append((x, y, Z(x) + (0.006 if low else 0.009) + 0.0006 * (i % 3) * (not low)))
         F.append((k, k + 1, k + 2, k + 3))
         U.extend(uv)
     for kind, (V, F, U) in groups.items():
