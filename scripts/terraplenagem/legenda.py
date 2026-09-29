@@ -1,11 +1,13 @@
 """Aplica título, legenda de corte/aterro e volumes sobre o render.
 
-  python3 legenda.py render.png dem.npz saida.png
+  python3 legenda.py render.png dem.npz saida.png            # vista com corte/aterro
+  python3 legenda.py render.png dem.npz saida.png conceitual # só título (vista conceitual)
 """
 import sys, json, numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 SRC, DEM, OUT = sys.argv[1:4]
+MODO = sys.argv[4] if len(sys.argv) > 4 else 'corte_aterro'
 vol = json.loads(str(np.load(DEM)['vol']))
 im = Image.open(SRC).convert('RGBA')
 W, H = im.size
@@ -47,7 +49,12 @@ m = int(28 * k)
 panel((m, m, m + int(610 * k), m + int(98 * k)))
 d = ImageDraw.Draw(im)
 d.text((m + 22 * k, m + 14 * k), 'PLATO GERAL – RUA B', font=fB, fill=(255, 255, 255))
-d.text((m + 22 * k, m + 56 * k), 'Terraplenagem · perspectiva a partir da Rua B', font=fR, fill=(215, 218, 222))
+d.text((m + 22 * k, m + 56 * k), 'Terraplenagem · perspectiva a partir da Rua B' if MODO != 'conceitual'
+       else 'Estudo conceitual · vista do pedestre na calçada da Rua B', font=fR, fill=(215, 218, 222))
+if MODO == 'conceitual':
+    im.convert('RGB').save(OUT, optimize=True)
+    print('ok', OUT)
+    sys.exit()
 
 # ---------------- legenda (base esquerda)
 pw, ph = int(700 * k), int(238 * k)

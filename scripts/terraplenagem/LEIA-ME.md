@@ -3,8 +3,11 @@
 Imagem 3D realista da superfície projetada **PLATO GERAL - RUA B** (Civil 3D), com
 destaque de corte e aterro, vista em perspectiva a partir da Rua B.
 
-Resultado: `renders_terraplenagem/plato_rua_b.png` (1920×1080, com legenda) e
-`plato_rua_b_sem_legenda.png`.
+Resultados (1920×1080) em `renders_terraplenagem/`:
+- `plato_rua_b.png` / `plato_rua_b_sem_legenda.png`: perspectiva elevada, estilo realista, com corte e aterro.
+- `plato_rua_b_calcada_conceitual.png` / `..._sem_titulo.png`: vista do pedestre (olho a 1,65 m) na
+  calçada SO da Rua B, estilo conceitual (maquete), sem manchas de corte/aterro. As figuras humanas
+  servem apenas de escala.
 
 ## Dados usados (pasta `dados/`)
 | Fonte | Uso |
@@ -34,6 +37,9 @@ python3 scripts/tools/fix_dxf.py terr.dxf terr_fixed.dxf
 python3 scripts/terraplenagem/prep_dem.py terr_fixed.dxf "dados/Terraplanagem AEIs R02.xml" dem.npz
 python3 scripts/terraplenagem/build_render.py -- dem.npz bruto.png 1920 1080 192 ruab
 python3 scripts/terraplenagem/legenda.py bruto.png dem.npz plato_rua_b.png
+# vista conceitual do pedestre
+python3 scripts/terraplenagem/build_render.py -- dem.npz calc.png 1920 1080 160 calcada conceitual
+python3 scripts/terraplenagem/legenda.py calc.png dem.npz plato_rua_b_calcada_conceitual.png conceitual
 ```
 Outras vistas em `build_render.py`: `ruab_ped` (pedestre na Rua B), `ruab_lat`,
 `ruab_nw` e `topo` (planta, para conferência).
