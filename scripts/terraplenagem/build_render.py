@@ -12,7 +12,8 @@ argv = sys.argv[sys.argv.index('--') + 1:]
 DEM, OUT = argv[0], argv[1]
 W, H, SPP = int(argv[2]), int(argv[3]), int(argv[4])
 VIEW = argv[5] if len(argv) > 5 else 'ruab'
-STYLE = argv[6] if len(argv) > 6 else 'realista'      # 'realista' (corte/aterro) ou 'conceitual' (maquete)
+STYLE = argv[6] if len(argv) > 6 else 'realista'      # 'realista' (corte/aterro), 'conceitual' (maquete)
+#                                                       ou 'foto' (materiais realistas, sem manchas: base p/ Runway)
 
 O = np.array([340800.0, 6994550.0, 720.0])       # origem local (UTM SIRGAS 22S)
 Z = np.load(DEM)
@@ -205,7 +206,7 @@ iso = t.math('MULTIPLY', t.math('LESS_THAN', fr, 0.07), t.math('GREATER_THAN', a
 cf = t.mix(t.math('MULTIPLY', iso, 0.5), cf, (0.03, 0.02, 0.02))
 alpha = t.math('MULTIPLY', t.math('DIVIDE', t.math('SUBTRACT', absdz, 0.04), 0.45, clamp=True), 0.66)
 cf = t.mix(1.0, cf, t.ramp(t.noise(1.1, 6), [(0.3, (0.80, 0.80, 0.80)), (0.7, (1.08, 1.08, 1.08))]), 'MULTIPLY')
-col = t.mix(alpha, base, cf)
+col = t.mix(t.math('MULTIPLY', alpha, 0.0 if STYLE == 'foto' else 1.0), base, cf)   # 'foto': sem manchas
 t.link(col, t.bsdf.inputs['Base Color'])
 t.bsdf.inputs['Roughness'].default_value = 0.93
 spec(t.bsdf, 0.2)
@@ -250,7 +251,7 @@ tlim.bsdf.inputs['Base Color'].default_value = (1.0, 0.95, 0.75, 1)
 tlim.bsdf.inputs['Emission Color'].default_value = (1.0, 0.95, 0.75, 1)
 tlim.bsdf.inputs['Emission Strength'].default_value = 1.5
 lim.data.materials.append(mlim); lim.visible_shadow = False
-if STYLE == 'conceitual':
+if STYLE in ('conceitual', 'foto'):
     lim.hide_render = True
 
 # ------------------------------------------------------------------ vegetação de fundo (procedural)
