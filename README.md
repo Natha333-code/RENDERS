@@ -80,3 +80,8 @@ Gerado por `scripts/sketchup/` (sk_tree_textures.py → sk_textures.py → sk_ex
 `web/` – visualizador three.js (glTF + Draco) gerado por `scripts/sketchup/web_export.py`.
 Publicado como página: vistas dos renders, camadas, setores A–K do memorial e sol por hora do dia.
 Para abrir localmente: `cd web && python3 -m http.server` e acesse http://localhost:8000.
+
+## Terraplenagem – Plato Geral · Rua B
+`renders_terraplenagem/plato_rua_b.png` – perspectiva realista a partir da Rua B, com
+corte (amarelo→vermelho) e aterro (azul) sobre a superfície LandXML "PLATO GERAL - RUA B".
+Scripts e método em `scripts/terraplenagem/LEIA-ME.md`.
