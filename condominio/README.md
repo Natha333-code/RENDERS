@@ -45,3 +45,16 @@ blender -b cena.blend --python scripts/render.py -- renders planta,drone_alto 19
 `_contato.jpg` reúne todas as vistas: planta, drone_alto, aerea_vias, aerea_sudeste,
 aerea_sudoeste, aerea_norte, aerea_leste, drone_leste, rua_acesso, rua_quadras, acesso_norte
 e clareira_topo.
+
+## Maquete interativa (`web/`)
+Visualizador three.js com os modos caminhar, voar e orbitar, os mesmos pontos de vista dos
+renders, camadas (lotes, mata, bairros, sombras) e minimapa.
+1. Gerar as texturas do chão, os sprites das árvores e o céu:
+   ```bash
+   blender -b cena.blend --python scripts/web/bake_web.py -- dados web/dados
+   ```
+2. Gerar a geometria (terreno, vias, edificações, linhas). Os binários saem em base64 (`.txt`):
+   ```bash
+   python3 scripts/web/export_web.py dados web/dados
+   ```
+3. Abrir `web/index.html` por um servidor local, por exemplo `python3 -m http.server` dentro de `web/`.

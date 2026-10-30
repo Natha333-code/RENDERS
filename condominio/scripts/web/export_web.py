@@ -206,3 +206,9 @@ meta['vistas'] = {
 meta['zmin'], meta['zmax'] = J['zmin'], J['zmax']
 json.dump(meta, open(f'{OUT}/cena.json', 'w'), indent=1, ensure_ascii=False)
 print('vias', {k: v[1] // 3 for k, v in meta['vias'].items()}, 'edificações (tri)', len(P) // 3)
+
+# o servidor de artefatos não serve .bin: binários vão em base64 (.txt), decodificados no navegador
+import base64, os
+for f in glob(f'{OUT}/*.bin'):
+    open(f[:-4] + '.txt', 'w').write(base64.b64encode(open(f, 'rb').read()).decode())
+    os.remove(f)

@@ -19,6 +19,7 @@
   color-scheme: dark;
 }
 html, body { height: 100%; }
+[hidden] { display: none !important; }
 body { background: var(--chao); color: var(--texto); font: 14px/1.4 var(--f-corpo); overflow: hidden; touch-action: none; }
 #cena { position: fixed; inset: 0; display: block; width: 100%; height: 100%; outline: none; }
 .painel { background: var(--painel); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid var(--linha); border-radius: 6px; }
@@ -151,14 +152,18 @@ const TOQUE = matchMedia('(pointer: coarse)').matches;
 if (TOQUE) document.body.classList.add('toque');
 
 // ------------------------------------------------------------ carregamento
-const ARQS = ['cena.json', 'bake.json', 'linhas.json', 'terreno_nucleo.bin', 'terreno_entorno.bin', 'terreno_horizonte.bin',
-  'vias.bin', 'edificacoes.bin', 'arvores.bin'];
+// binários vão em base64 (.txt): o servidor de artefatos não serve .bin
+const ARQS = ['cena.json', 'bake.json', 'linhas.json', 'terreno_nucleo.txt', 'terreno_entorno.txt', 'terreno_horizonte.txt',
+  'vias.txt', 'edificacoes.txt', 'arvores.txt'];
 let feitos = 0; const total = ARQS.length + 13;
 const passo = () => { feitos++; $('barra').firstElementChild.style.width = (100 * feitos / total).toFixed(0) + '%'; };
 const buscar = async (n) => {
   const r = await fetch('dados/' + n);
   if (!r.ok) throw new Error(n);
-  const v = n.endsWith('.json') ? await r.json() : await r.arrayBuffer(); passo(); return v;
+  let v;
+  if (n.endsWith('.json')) v = await r.json();
+  else { const b = atob((await r.text()).trim()); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); v = u.buffer; }
+  passo(); return v;
 };
 const texLoader = new THREE.TextureLoader();
 const tex = (n, rep, srgb = true) => new Promise((ok, err) => texLoader.load('dados/' + n, (t) => {
@@ -187,7 +192,7 @@ const canvas = $('cena');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, TOQUE ? 1.5 : 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = !window.__LEVE; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 const corNevoa = new THREE.Color().setRGB(0.70, 0.77, 0.85, THREE.SRGBColorSpace);
 scene.fog = new THREE.Fog(corNevoa, 350, 15000);
@@ -272,7 +277,7 @@ function malha(g, arr, t, buraco, detalhe) {
     const x = x0 + (c + 0.5) * res, y = y0 + (r + 0.5) * res;
     if (buraco && buraco(x, y)) continue;
     const a = r * nx + c, b = a + 1, d = a + nx, e = d + 1;
-    idx.push(a, d, b, b, d, e);
+    idx.push(a, b, d, b, e, d);
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
