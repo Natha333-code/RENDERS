@@ -1,0 +1,627 @@
+<title>Maquete Condomínio TJ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cena 3D em tela cheia; painéis de prancheta translúcidos nos cantos, amarelo de levantamento como destaque. */
+:root {
+  --chao: #11161a;            /* fundo do carregamento */
+  --painel: rgba(17, 22, 26, 0.78);
+  --painel-forte: rgba(17, 22, 26, 0.92);
+  --linha: rgba(226, 232, 222, 0.16);
+  --texto: #e6eae2;
+  --texto-2: #a7b0a6;
+  --destaque: #f2c230;        /* amarelo do perímetro */
+  --destaque-texto: #1b1606;
+  --f-titulo: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-corpo: "Barlow", system-ui, sans-serif;
+  --f-dado: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--chao); color: var(--texto); font: 14px/1.4 var(--f-corpo); overflow: hidden; touch-action: none; }
+#cena { position: fixed; inset: 0; display: block; width: 100%; height: 100%; outline: none; }
+.painel { background: var(--painel); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid var(--linha); border-radius: 6px; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
+
+#topo { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 8px; max-width: calc(100% - 32px); }
+#marca { padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; }
+#marca h1 { margin: 0; font: 600 20px/1.05 var(--f-titulo); letter-spacing: 0.02em; text-wrap: balance; }
+#marca span { font: 12px var(--f-dado); color: var(--texto-2); }
+#modos { display: flex; padding: 3px; gap: 3px; align-self: flex-start; }
+#modos button { padding: 7px 12px; border-radius: 4px; font: 600 14px var(--f-titulo); letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-2); }
+#modos button[aria-pressed="true"] { background: var(--destaque); color: var(--destaque-texto); }
+
+#lado { position: fixed; top: calc(150px + env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); width: 210px; padding: 12px; display: flex; flex-direction: column; gap: 14px; max-height: calc(100% - 330px); overflow-y: auto; }
+#lado h2 { margin: 0 0 6px; font: 600 12px var(--f-titulo); letter-spacing: 0.12em; text-transform: uppercase; color: var(--texto-2); }
+.lista { display: flex; flex-direction: column; gap: 2px; }
+.lista button { text-align: left; padding: 6px 8px; border-radius: 4px; display: flex; justify-content: space-between; gap: 8px; }
+.lista button:hover { background: rgba(255,255,255,0.07); }
+.lista button small { font: 11px var(--f-dado); color: var(--texto-2); }
+label.chk { display: flex; align-items: center; gap: 8px; padding: 4px 2px; cursor: pointer; }
+label.chk input { accent-color: var(--destaque); width: 16px; height: 16px; margin: 0; }
+#vel { width: 100%; accent-color: var(--destaque); }
+.linha-vel { display: flex; justify-content: space-between; font: 12px var(--f-dado); color: var(--texto-2); }
+#recolher { display: none; }
+
+#leitura { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); padding: 8px 12px; font: 12px/1.6 var(--f-dado); font-variant-numeric: tabular-nums; text-align: right; }
+#leitura b { color: var(--destaque); font-weight: 500; }
+
+#mapa { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); padding: 4px; }
+#mapa canvas { display: block; width: 168px; height: 210px; border-radius: 3px; cursor: crosshair; }
+#mapa .rot { position: absolute; top: 8px; left: 10px; font: 600 11px var(--f-titulo); letter-spacing: 0.1em; color: #fff; text-shadow: 0 1px 2px #000; pointer-events: none; }
+
+#ajuda { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); padding: 8px 12px; font-size: 13px; color: var(--texto-2); max-width: min(520px, calc(100% - 230px)); }
+#ajuda kbd { font: 11px var(--f-dado); color: var(--texto); border: 1px solid var(--linha); border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; }
+
+#carga { position: fixed; inset: 0; background: var(--chao); display: flex; align-items: center; justify-content: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); z-index: 5; }
+#carga div { width: min(360px, 100%); display: flex; flex-direction: column; gap: 10px; }
+#carga h1 { margin: 0; font: 600 28px var(--f-titulo); }
+#carga p { margin: 0; color: var(--texto-2); }
+#barra { height: 3px; background: var(--linha); }
+#barra i { display: block; height: 100%; width: 0; background: var(--destaque); transition: width .2s; }
+
+#joy { position: fixed; left: calc(28px + env(safe-area-inset-left, 0px)); bottom: calc(110px + env(safe-area-inset-bottom, 0px)); width: 110px; height: 110px; border-radius: 50%; border: 1px solid var(--linha); background: rgba(17,22,26,0.35); display: none; touch-action: none; }
+#joy i { position: absolute; left: 35px; top: 35px; width: 40px; height: 40px; border-radius: 50%; background: var(--destaque); opacity: 0.85; }
+#subir { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(240px + env(safe-area-inset-bottom, 0px)); display: none; flex-direction: column; gap: 6px; }
+#subir button { width: 44px; height: 44px; font: 600 18px var(--f-titulo); }
+
+@media (max-width: 720px) {
+  #marca h1 { font-size: 17px; }
+  #lado { top: auto; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: calc(100% - 32px - 140px); max-height: 45%; }
+  #lado.fechado > :not(#recolher) { display: none; }
+  #recolher { display: block; text-align: left; font: 600 13px var(--f-titulo); letter-spacing: 0.1em; text-transform: uppercase; color: var(--texto-2); }
+  #mapa canvas { width: 112px; height: 140px; }
+  #ajuda { display: none; }
+  #leitura { top: auto; bottom: calc(170px + env(safe-area-inset-bottom, 0px)); font-size: 11px; }
+  body.toque #joy { display: block; }
+  body.toque #lado { left: auto; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(176px + env(safe-area-inset-bottom, 0px)); width: 200px; }
+  body.toque #leitura { display: none; }
+}
+body.toque #joy { display: block; }
+body.toque.voar #subir { display: flex; }
+@media (prefers-reduced-motion: reduce) { #barra i { transition: none; } }
+</style>
+
+<canvas id="cena" tabindex="0" aria-label="Maquete 3D do condomínio"></canvas>
+
+<div id="topo">
+  <div id="marca" class="painel">
+    <h1>Condomínio TJ · maquete interativa</h1>
+    <span>Terreno natural · UTM 22S SIRGAS 2000</span>
+  </div>
+  <div id="modos" class="painel" role="group" aria-label="Modo de navegação">
+    <button id="m-andar" aria-pressed="false">Caminhar</button>
+    <button id="m-voar" aria-pressed="false">Voar</button>
+    <button id="m-orbitar" aria-pressed="true">Orbitar</button>
+  </div>
+</div>
+
+<aside id="lado" class="painel fechado">
+  <button id="recolher" aria-expanded="false">Vistas e camadas ▾</button>
+  <section>
+    <h2>Pontos de vista</h2>
+    <div class="lista" id="vistas"></div>
+  </section>
+  <section>
+    <h2>Camadas</h2>
+    <label class="chk"><input type="checkbox" id="c-lotes" checked> Lotes e perímetro</label>
+    <label class="chk"><input type="checkbox" id="c-mata" checked> Mata nativa</label>
+    <label class="chk"><input type="checkbox" id="c-entorno" checked> Bairros vizinhos</label>
+    <label class="chk"><input type="checkbox" id="c-sombra" checked> Sombras</label>
+  </section>
+  <section>
+    <h2>Velocidade</h2>
+    <input type="range" id="vel" min="0" max="4" step="1" value="1" aria-label="Velocidade de deslocamento">
+    <div class="linha-vel"><span>a pé</span><span id="vel-v">1,4 m/s</span><span>drone</span></div>
+  </section>
+</aside>
+
+<div id="leitura" class="painel" aria-live="off">
+  <div>E <span id="r-e">–</span></div>
+  <div>N <span id="r-n">–</span></div>
+  <div>cota <b id="r-z">–</b> m · rumo <span id="r-rumo">–</span></div>
+</div>
+
+<div id="mapa" class="painel"><canvas id="mapa-c" width="336" height="420" aria-label="Minimapa: toque para ir ao ponto"></canvas><span class="rot">PLANTA · N ↑</span></div>
+
+<div id="ajuda" class="painel"></div>
+<div id="joy" aria-hidden="true"><i></i></div>
+<div id="subir"><button class="painel" id="b-sobe" aria-label="Subir">▲</button><button class="painel" id="b-desce" aria-label="Descer">▼</button></div>
+
+<div id="carga"><div>
+  <h1>Condomínio TJ</h1>
+  <p id="carga-t">Carregando terreno, vias e vegetação…</p>
+  <div id="barra"><i></i></div>
+</div></div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
+
+const $ = (id) => document.getElementById(id);
+const TOQUE = matchMedia('(pointer: coarse)').matches;
+if (TOQUE) document.body.classList.add('toque');
+
+// ------------------------------------------------------------ carregamento
+const ARQS = ['cena.json', 'bake.json', 'linhas.json', 'terreno_nucleo.bin', 'terreno_entorno.bin', 'terreno_horizonte.bin',
+  'vias.bin', 'edificacoes.bin', 'arvores.bin'];
+let feitos = 0; const total = ARQS.length + 13;
+const passo = () => { feitos++; $('barra').firstElementChild.style.width = (100 * feitos / total).toFixed(0) + '%'; };
+const buscar = async (n) => {
+  const r = await fetch('dados/' + n);
+  if (!r.ok) throw new Error(n);
+  const v = n.endsWith('.json') ? await r.json() : await r.arrayBuffer(); passo(); return v;
+};
+const texLoader = new THREE.TextureLoader();
+const tex = (n, rep, srgb = true) => new Promise((ok, err) => texLoader.load('dados/' + n, (t) => {
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
+  passo(); ok(t);
+}, undefined, () => err(new Error(n))));
+
+let dados;
+try {
+  const [cena, bake, linhas, tN, tE, tH, vias, edif, arv] = await Promise.all(ARQS.map(buscar));
+  dados = { cena, bake, linhas, tN: new Float32Array(tN), tE: new Float32Array(tE), tH: new Float32Array(tH), vias: new Float32Array(vias), edif, arv: new Float32Array(arv) };
+  const nomes = ['chao_nucleo.jpg', 'chao_entorno.jpg', 'chao_horizonte.jpg', 'ceu.jpg', 'paver_pista.jpg', 'paver_passeio.jpg', 'concreto.jpg', 'grama.jpg'];
+  const ts = await Promise.all(nomes.map((n, i) => tex(n, i >= 4)));
+  dados.tx = Object.fromEntries(nomes.map((n, i) => [n.split('.')[0], ts[i]]));
+  dados.sprites = await Promise.all(bake.sprites.map((_, i) => tex(`_sp${i}.png`, false)));
+  dados.minimapa = await new Promise((ok) => { const im = new Image(); im.onload = () => { passo(); ok(im); }; im.src = 'dados/minimapa.jpg'; });
+} catch (e) {
+  $('carga-t').textContent = 'Não foi possível carregar ' + e.message + '. Recarregue a página para tentar de novo.';
+  throw e;
+}
+
+// ------------------------------------------------------------ cena (three: X = leste, Y = cota, Z = −norte)
+const { cena: C, bake: B } = dados;
+const canvas = $('cena');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, TOQUE ? 1.5 : 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+const corNevoa = new THREE.Color().setRGB(0.70, 0.77, 0.85, THREE.SRGBColorSpace);
+scene.fog = new THREE.Fog(corNevoa, 350, 15000);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.25, 60000);
+
+// sol (mesma direção dos renders) e céu
+const sd = B.sol_dir; const solDir = new THREE.Vector3(sd[0], sd[2], -sd[1]).normalize();
+const sol = new THREE.DirectionalLight(new THREE.Color().setRGB(1.0, 0.95, 0.87), 3.4);
+sol.castShadow = true; sol.shadow.mapSize.set(TOQUE ? 2048 : 4096, TOQUE ? 2048 : 4096);
+sol.shadow.bias = -0.0004; sol.shadow.normalBias = 0.6;
+scene.add(sol, sol.target);
+scene.add(new THREE.HemisphereLight(new THREE.Color().setRGB(0.62, 0.72, 0.9), new THREE.Color().setRGB(0.35, 0.33, 0.25), 1.25));
+
+const ceu = new THREE.Mesh(new THREE.SphereGeometry(40000, 64, 32), new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false, toneMapped: false,
+  uniforms: { t: { value: dados.tx.ceu }, rot: { value: B.ceu_rot } },
+  vertexShader: `varying vec3 vD;
+    #include <common>
+    #include <logdepthbuf_pars_vertex>
+    void main(){ vD = position; vec4 mv = modelViewMatrix * vec4(position,1.); gl_Position = projectionMatrix * mv;
+    #include <logdepthbuf_vertex>
+    }`,
+  fragmentShader: `uniform sampler2D t; uniform float rot; varying vec3 vD;
+    #include <logdepthbuf_pars_fragment>
+    void main(){
+      #include <logdepthbuf_fragment>
+      vec3 d = normalize(vD); vec3 b = vec3(d.x, -d.z, d.y);
+      float c = cos(rot), s = sin(rot); b = vec3(c*b.x - s*b.y, s*b.x + c*b.y, b.z);
+      float u = 0.5 - atan(b.y, -b.x) / 6.2831853; float v = 0.5 + asin(clamp(b.z,-1.,1.)) / 3.1415927;
+      vec3 col = texture2D(t, vec2(u, max(v, 0.5))).rgb;
+      gl_FragColor = vec4(col, 1.);
+      #include <colorspace_fragment>
+    }`,
+}));
+dados.tx.ceu.generateMipmaps = false; dados.tx.ceu.minFilter = THREE.LinearFilter;
+ceu.renderOrder = -1; ceu.frustumCulled = false; scene.add(ceu);
+
+const aniso = renderer.capabilities.getMaxAnisotropy();
+const P = (x, y, z) => new THREE.Vector3(x, z, -y);
+
+// ------------------------------------------------------------ terreno
+const G = C.grades;
+function amostra(g, arr, x, y) {
+  let c = (x - g.x0) / g.res, r = (y - g.y0) / g.res;
+  if (c < 0 || r < 0 || c > g.nx - 1 || r > g.ny - 1) return null;
+  c = Math.min(c, g.nx - 1.001); r = Math.min(r, g.ny - 1.001);
+  const c0 = c | 0, r0 = r | 0, fc = c - c0, fr = r - r0, i = r0 * g.nx + c0;
+  return arr[i] * (1 - fc) * (1 - fr) + arr[i + 1] * fc * (1 - fr) + arr[i + g.nx] * (1 - fc) * fr + arr[i + g.nx + 1] * fc * fr;
+}
+const terreno = (x, y) => amostra(G.nucleo, dados.tN, x, y) ?? amostra(G.entorno, dados.tE, x, y) ?? amostra(G.horizonte, dados.tH, x, y) ?? C.cota_base;
+
+function materialChao(t, detalhe) {
+  t.anisotropy = aniso;
+  const m = new THREE.MeshLambertMaterial({ map: t });
+  if (detalhe) m.onBeforeCompile = (sh) => {
+    sh.uniforms.det = { value: dados.tx.grama };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D det; varying vec3 vWP;')
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        float dist = length(vWP - cameraPosition);
+        float f = 1.0 - smoothstep(25.0, 140.0, dist);
+        vec3 d1 = texture2D(det, vWP.xz / 2.5).rgb, d2 = texture2D(det, vWP.xz / 11.0).rgb;
+        float l = dot(mix(d1, d2, 0.4), vec3(0.3, 0.59, 0.11)) / 0.16;
+        float verde = smoothstep(0.0, 0.03, diffuseColor.g - diffuseColor.r);
+        diffuseColor.rgb *= mix(1.0, clamp(l, 0.35, 1.8), f * verde * 0.85);`);
+  };
+  return m;
+}
+
+function malha(g, arr, t, buraco, detalhe) {
+  const { nx, ny, x0, y0, res, dz } = g;
+  const pos = new Float32Array(nx * ny * 3), uv = new Float32Array(nx * ny * 2);
+  const [tx0, ty0, tam] = t;
+  for (let r = 0; r < ny; r++) for (let c = 0; c < nx; c++) {
+    const i = r * nx + c, x = x0 + c * res, y = y0 + r * res;
+    pos[i * 3] = x; pos[i * 3 + 1] = arr[i] + dz; pos[i * 3 + 2] = -y;
+    uv[i * 2] = (x - tx0) / tam; uv[i * 2 + 1] = (y - ty0) / tam;
+  }
+  const idx = [];
+  for (let r = 0; r < ny - 1; r++) for (let c = 0; c < nx - 1; c++) {
+    const x = x0 + (c + 0.5) * res, y = y0 + (r + 0.5) * res;
+    if (buraco && buraco(x, y)) continue;
+    const a = r * nx + c, b = a + 1, d = a + nx, e = d + 1;
+    idx.push(a, d, b, b, d, e);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.setIndex(idx); geo.computeVertexNormals();
+  return geo;
+}
+const gn = G.nucleo, nX1 = gn.x0 + (gn.nx - 1) * gn.res, nY1 = gn.y0 + (gn.ny - 1) * gn.res;
+const chao = [
+  new THREE.Mesh(malha(G.nucleo, dados.tN, B.chao_nucleo, null), materialChao(dados.tx.chao_nucleo, true)),
+  new THREE.Mesh(malha(G.entorno, dados.tE, B.chao_entorno, (x, y) => x > gn.x0 + 24 && x < nX1 - 24 && y > gn.y0 + 24 && y < nY1 - 24), materialChao(dados.tx.chao_entorno, true)),
+  new THREE.Mesh(malha(G.horizonte, dados.tH, B.chao_horizonte, (x, y) => Math.abs(x) < 2300 && Math.abs(y) < 2300), materialChao(dados.tx.chao_horizonte, false)),
+];
+chao.forEach((m, i) => { m.receiveShadow = i < 2; scene.add(m); });
+
+// ------------------------------------------------------------ vias (pista e passeio em paver, meio-fio, canteiros)
+const vias = new THREE.Group(); scene.add(vias);
+function blocoVia(nome, t, escala, cor, uvParede) {
+  const [o, n] = C.vias[nome];
+  const src = dados.vias.subarray(o * 3, (o + n) * 3);
+  const pos = new Float32Array(n * 3), uv = new Float32Array(n * 2);
+  for (let i = 0; i < n; i++) {
+    const x = src[i * 3], y = src[i * 3 + 1], z = src[i * 3 + 2];
+    pos[i * 3] = x; pos[i * 3 + 1] = z; pos[i * 3 + 2] = -y;
+    if (uvParede) { uv[i * 2] = (x + y) / escala; uv[i * 2 + 1] = z / escala; }
+    else { uv[i * 2] = x / escala; uv[i * 2 + 1] = y / escala; }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.computeVertexNormals();
+  t.anisotropy = aniso;
+  const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: t, color: new THREE.Color().setRGB(...cor) }));
+  m.receiveShadow = true; m.castShadow = nome === 'espelho';
+  vias.add(m); return m;
+}
+const piso = [
+  blocoVia('pista', dados.tx.paver_pista, 4, [0.85, 0.85, 0.86]),
+  blocoVia('passeio', dados.tx.paver_passeio, 4, [0.80, 0.79, 0.77]),
+  blocoVia('meiofio', dados.tx.concreto, 2, [0.85, 0.85, 0.84]),
+  blocoVia('canteiro', dados.tx.grama, 3, [0.55, 0.62, 0.40]),
+];
+blocoVia('espelho', dados.tx.concreto, 2, [0.8, 0.8, 0.79], true);
+
+// ------------------------------------------------------------ edificações do entorno (OSM + imagem aérea)
+const entorno = (() => {
+  const n = C.edificacoes, buf = dados.edif;
+  const src = new Float32Array(buf, 0, n * 3), cor = new Uint8Array(buf, n * 12, n * 3);
+  const pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { pos[i * 3] = src[i * 3]; pos[i * 3 + 1] = src[i * 3 + 2]; pos[i * 3 + 2] = -src[i * 3 + 1]; }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(cor, 3, true));
+  geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+  m.castShadow = m.receiveShadow = true; scene.add(m); return m;
+})();
+
+// ------------------------------------------------------------ mata nativa: sprites cruzados instanciados
+const mata = new THREE.Group(); scene.add(mata);
+(() => {
+  const a = dados.arv, n = a.length / 6, porTipo = B.sprites.map(() => []);
+  for (let i = 0; i < n; i++) porTipo[a[i * 6 + 5] | 0]?.push(i);
+  const cruz = () => {
+    const g1 = new THREE.PlaneGeometry(1, 1), g2 = new THREE.PlaneGeometry(1, 1).rotateY(Math.PI / 2);
+    const pos = new Float32Array([...g1.attributes.position.array, ...g2.attributes.position.array]);
+    const uv = new Float32Array([...g1.attributes.uv.array, ...g2.attributes.uv.array]);
+    const nor = new Float32Array(pos.length); for (let i = 1; i < nor.length; i += 3) nor[i] = 1; // luz uniforme (sprite já sombreado)
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    g.setIndex([0, 2, 1, 2, 3, 1, 4, 6, 5, 6, 7, 5]); return g;
+  };
+  const geo = cruz(), M = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(), p = new THREE.Vector3();
+  B.sprites.forEach((sp, k) => {
+    const ids = porTipo[k]; if (!ids.length) return;
+    const t = dados.sprites[k]; t.anisotropy = 4;
+    const mat = new THREE.MeshLambertMaterial({ map: t, alphaTest: 0.45, side: THREE.DoubleSide, color: new THREE.Color().setRGB(0.92, 0.95, 0.9) });
+    const im = new THREE.InstancedMesh(geo, mat, ids.length);
+    ids.forEach((i, j) => {
+      const x = a[i * 6], y = a[i * 6 + 1], z = a[i * 6 + 2], esc = a[i * 6 + 3], rz = a[i * 6 + 4];
+      const tam = sp.tam * esc;
+      p.set(x, z + sp.zc * esc, -y); q.setFromEuler(e.set(0, rz, 0)); s.set(tam, tam, tam);
+      im.setMatrixAt(j, M.compose(p, q, s));
+    });
+    im.castShadow = true; im.receiveShadow = true; im.computeBoundingSphere();
+    mata.add(im);
+  });
+})();
+
+// ------------------------------------------------------------ perímetro, lotes e quadras
+const linhas = new THREE.Group(); scene.add(linhas);
+const matLinhas = [];
+function polilinha(pts, cor, larg, op) {
+  const g = new LineGeometry(); g.setPositions(pts.flatMap(([x, y, z]) => [x, z, -y]));
+  const m = new LineMaterial({ color: cor, linewidth: larg, transparent: op < 1, opacity: op, worldUnits: false });
+  matLinhas.push(m); const l = new Line2(g, m); l.computeLineDistances(); linhas.add(l);
+}
+dados.linhas.lotes.forEach((l) => polilinha(l, 0xf4f1e6, 1.4, 0.75));
+dados.linhas.quadras.forEach((l) => polilinha(l, 0xf4f1e6, 2.0, 0.9));
+polilinha(dados.linhas.perimetro, 0xf2c230, 3.5, 1);
+
+// ------------------------------------------------------------ chão sob os pés (terreno ou pavimento)
+const ray = new THREE.Raycaster(), baixo = new THREE.Vector3(0, -1, 0), origem = new THREE.Vector3();
+function solo(x, y) {
+  let z = terreno(x, y);
+  if (x > gn.x0 && x < nX1 && y > gn.y0 && y < nY1) {
+    ray.set(origem.set(x, z + 30, -y), baixo); ray.far = 60;
+    const h = ray.intersectObjects(piso, false)[0];
+    if (h) z = Math.max(z, h.point.y);
+  }
+  return z;
+}
+
+// ------------------------------------------------------------ navegação
+const est = { modo: 'orbitar', pos: new THREE.Vector3(), yaw: 0, pitch: 0, alvo: new THREE.Vector3(), dist: 400, az: 0, el: 0.6, anim: null, olho: 1.65 };
+const VEL = [0.7, 1.4, 4, 15, 45];
+const VEL_ROT = ['0,7 m/s', '1,4 m/s', '4 m/s', '15 m/s', '45 m/s'];
+const teclas = new Set();
+const ajuda = {
+  andar: TOQUE ? 'Joystick para andar · arraste para olhar' : '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> andar · arraste para olhar · <kbd>Shift</kbd> correr · clique no mapa para ir até lá',
+  voar: TOQUE ? 'Joystick para voar · ▲▼ altura · arraste para olhar' : '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> voar · <kbd>E</kbd>/<kbd>Q</kbd> subir e descer · arraste para olhar · <kbd>Shift</kbd> rápido',
+  orbitar: TOQUE ? 'Arraste para girar · pinça para aproximar · dois dedos para mover' : 'Arraste para girar · roda para aproximar · botão direito ou <kbd>Shift</kbd>+arraste para mover',
+};
+
+function setModo(m, manterVista = true) {
+  if (m === est.modo) return;
+  const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+  if (m === 'orbitar') {
+    // gira em torno do ponto do chão para onde se olha
+    const alvo = camera.position.clone().addScaledVector(dir, Math.max(60, camera.position.y - terrenoY(camera.position) + 60));
+    alvo.y = terrenoY(alvo);
+    const off = camera.position.clone().sub(alvo);
+    est.alvo.copy(alvo); est.dist = Math.max(off.length(), 30);
+    est.az = Math.atan2(off.x, off.z); est.el = Math.max(0.08, Math.asin(off.y / off.length()));
+  } else {
+    est.pos.copy(camera.position);
+    est.yaw = Math.atan2(-dir.x, -dir.z); est.pitch = Math.asin(THREE.MathUtils.clamp(dir.y, -1, 1));
+    if (m === 'andar') {
+      est.pitch = Math.max(-0.5, Math.min(0.3, est.pitch));
+      if (est.modo === 'orbitar' || est.pos.y - terrenoY(est.pos) > 3) {
+        const p = est.modo === 'orbitar' ? est.alvo : est.pos;
+        est.pos.set(p.x, solo(p.x, -p.z) + est.olho, p.z); est.pitch = -0.05;
+      }
+      if ($('vel').value > 2) setVel(1);
+    } else if ($('vel').value < 3) setVel(3);
+  }
+  est.modo = m;
+  document.body.classList.toggle('voar', m === 'voar');
+  ['andar', 'voar', 'orbitar'].forEach((k) => $('m-' + k).setAttribute('aria-pressed', k === m));
+  $('ajuda').innerHTML = ajuda[m];
+}
+const terrenoY = (v) => terreno(v.x, -v.z);
+function setVel(i) { $('vel').value = i; $('vel-v').textContent = VEL_ROT[i]; }
+$('vel').addEventListener('input', () => setVel(+$('vel').value));
+['andar', 'voar', 'orbitar'].forEach((k) => $('m-' + k).addEventListener('click', () => setModo(k)));
+
+// pontos de vista (os mesmos dos renders): z < 30 = altura sobre o terreno
+function cota([x, y, z]) { return z < 30 ? solo(x, y) + z : z + 620; }
+function irVista(nome) {
+  const [p, t] = C.vistas[nome];
+  const de = P(p[0], p[1], cota(p)), para = P(t[0], t[1], cota(t));
+  if (p[2] < 30) {
+    setModo('andar');
+    const d = para.clone().sub(de).normalize();
+    animar({ pos: de, yaw: Math.atan2(-d.x, -d.z), pitch: Math.asin(d.y) });
+  } else {
+    setModo('orbitar');
+    const off = de.clone().sub(para);
+    animar({ alvo: para, dist: off.length(), az: Math.atan2(off.x, off.z), el: Math.asin(off.y / off.length()) });
+  }
+}
+function animar(fim) {
+  const ini = { pos: est.pos.clone(), yaw: est.yaw, pitch: est.pitch, alvo: est.alvo.clone(), dist: est.dist, az: est.az, el: est.el };
+  if (fim.yaw !== undefined) fim.yaw = ini.yaw + Math.atan2(Math.sin(fim.yaw - ini.yaw), Math.cos(fim.yaw - ini.yaw));
+  if (fim.az !== undefined) fim.az = ini.az + Math.atan2(Math.sin(fim.az - ini.az), Math.cos(fim.az - ini.az));
+  const dur = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1400;
+  est.anim = { ini, fim, t0: performance.now(), dur };
+}
+const lista = $('vistas');
+Object.keys(C.vistas).forEach((nome) => {
+  const b = document.createElement('button');
+  b.innerHTML = `<span>${nome}</span><small>${C.vistas[nome][0][2] < 30 ? 'a pé' : 'aérea'}</small>`;
+  b.addEventListener('click', () => { irVista(nome); if (innerWidth <= 720) recolher(true); });
+  lista.appendChild(b);
+});
+function recolher(f) { $('lado').classList.toggle('fechado', f); $('recolher').setAttribute('aria-expanded', !f); }
+$('recolher').addEventListener('click', () => recolher(!$('lado').classList.contains('fechado')));
+if (innerWidth > 720) $('lado').classList.remove('fechado');
+
+// camadas
+$('c-lotes').addEventListener('change', (e) => (linhas.visible = e.target.checked));
+$('c-mata').addEventListener('change', (e) => (mata.visible = e.target.checked));
+$('c-entorno').addEventListener('change', (e) => (entorno.visible = e.target.checked));
+$('c-sombra').addEventListener('change', (e) => { sol.castShadow = e.target.checked; });
+
+// teclado
+addEventListener('keydown', (e) => { if (e.target.tagName === 'INPUT' && e.target.type === 'range') return; teclas.add(e.code); });
+addEventListener('keyup', (e) => teclas.delete(e.code));
+addEventListener('blur', () => teclas.clear());
+
+// ponteiro: olhar / girar / mover
+const toques = new Map(); let pinca = null;
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+canvas.addEventListener('pointerdown', (e) => { canvas.setPointerCapture(e.pointerId); toques.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); est.anim = null; pinca = null; });
+canvas.addEventListener('pointerup', (e) => { toques.delete(e.pointerId); pinca = null; });
+canvas.addEventListener('pointercancel', (e) => { toques.delete(e.pointerId); pinca = null; });
+canvas.addEventListener('pointermove', (e) => {
+  const t = toques.get(e.pointerId); if (!t) return;
+  const dx = e.clientX - t.x, dy = e.clientY - t.y; t.x = e.clientX; t.y = e.clientY;
+  if (toques.size === 2 && est.modo === 'orbitar') {
+    const [a, b] = [...toques.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y), m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    if (pinca) { est.dist = THREE.MathUtils.clamp(est.dist * pinca.d / d, 15, 6000); mover((m.x - pinca.m.x), (m.y - pinca.m.y)); }
+    pinca = { d, m }; return;
+  }
+  if (est.modo === 'orbitar') {
+    if (t.b === 2 || t.sh) mover(dx, dy);
+    else { est.az -= dx * 0.005; est.el = THREE.MathUtils.clamp(est.el + dy * 0.004, 0.03, 1.5); }
+  } else {
+    est.yaw -= dx * 0.0035; est.pitch = THREE.MathUtils.clamp(est.pitch - dy * 0.0035, -1.45, 1.45);
+  }
+});
+function mover(dx, dy) {
+  const k = est.dist * 0.0016;
+  const fx = Math.sin(est.az), fz = Math.cos(est.az);
+  est.alvo.x += (-dx * fz - dy * fx) * k; est.alvo.z += (dx * fx - dy * fz) * k;
+  est.alvo.y = terrenoY(est.alvo);
+}
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault(); est.anim = null;
+  if (est.modo === 'orbitar') est.dist = THREE.MathUtils.clamp(est.dist * Math.exp(e.deltaY * 0.001), 15, 6000);
+  else { const i = THREE.MathUtils.clamp(+$('vel').value + (e.deltaY < 0 ? 1 : -1), 0, 4); setVel(i); }
+}, { passive: false });
+
+// joystick (toque)
+const joy = { x: 0, y: 0, id: null };
+const jEl = $('joy'), jP = jEl.firstElementChild;
+function joyMove(e) {
+  const r = jEl.getBoundingClientRect(); let x = (e.clientX - r.left - 55) / 45, y = (e.clientY - r.top - 55) / 45;
+  const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; }
+  joy.x = x; joy.y = y; jP.style.transform = `translate(${x * 35}px, ${y * 35}px)`;
+}
+jEl.addEventListener('pointerdown', (e) => { joy.id = e.pointerId; jEl.setPointerCapture(e.pointerId); joyMove(e); if (est.modo === 'orbitar') setModo('andar'); });
+jEl.addEventListener('pointermove', (e) => { if (e.pointerId === joy.id) joyMove(e); });
+const joyFim = () => { joy.id = null; joy.x = joy.y = 0; jP.style.transform = ''; };
+jEl.addEventListener('pointerup', joyFim); jEl.addEventListener('pointercancel', joyFim);
+const vert = { v: 0 };
+[['b-sobe', 1], ['b-desce', -1]].forEach(([id, s]) => {
+  $(id).addEventListener('pointerdown', () => (vert.v = s));
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => $(id).addEventListener(ev, () => (vert.v = 0)));
+});
+
+// ------------------------------------------------------------ minimapa
+const mapa = $('mapa-c'), mctx = mapa.getContext('2d'), MM = C.minimapa;
+const aMapa = (x, y) => [(x - MM.x0) / (MM.x1 - MM.x0) * mapa.width, (MM.y1 - y) / (MM.y1 - MM.y0) * mapa.height];
+mapa.addEventListener('click', (e) => {
+  const r = mapa.getBoundingClientRect();
+  const x = MM.x0 + (e.clientX - r.left) / r.width * (MM.x1 - MM.x0), y = MM.y1 - (e.clientY - r.top) / r.height * (MM.y1 - MM.y0);
+  if (est.modo === 'orbitar') animar({ alvo: P(x, y, terreno(x, y)), dist: est.dist, az: est.az, el: est.el });
+  else animar({ pos: P(x, y, solo(x, y) + (est.modo === 'andar' ? est.olho : Math.max(est.pos.y - terrenoY(est.pos), 20))), yaw: est.yaw, pitch: est.pitch });
+});
+function desenhaMapa() {
+  mctx.drawImage(dados.minimapa, 0, 0, mapa.width, mapa.height);
+  const x = camera.position.x, y = -camera.position.z;
+  const [u, v] = aMapa(x, y); const d = new THREE.Vector3(); camera.getWorldDirection(d);
+  const ang = Math.atan2(d.x, -d.z);
+  mctx.save(); mctx.translate(u, v); mctx.rotate(ang);
+  mctx.fillStyle = 'rgba(242,194,48,0.28)'; mctx.beginPath(); mctx.moveTo(0, 0); mctx.arc(0, 0, 44, -Math.PI / 2 - 0.5, -Math.PI / 2 + 0.5); mctx.fill();
+  mctx.fillStyle = '#f2c230'; mctx.strokeStyle = '#111'; mctx.lineWidth = 2;
+  mctx.beginPath(); mctx.moveTo(0, -11); mctx.lineTo(8, 8); mctx.lineTo(0, 4); mctx.lineTo(-8, 8); mctx.closePath(); mctx.stroke(); mctx.fill();
+  mctx.restore();
+}
+
+// ------------------------------------------------------------ laço
+function tamanho() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  matLinhas.forEach((m) => m.resolution.set(w, h));
+}
+addEventListener('resize', tamanho); tamanho();
+
+const fmt = (v, d = 0) => v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const RUMOS = ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'];
+let ult = performance.now(), quadro = 0;
+const fw = new THREE.Vector3(), lado = new THREE.Vector3(), tmp = new THREE.Vector3();
+function laco(agora) {
+  const dt = Math.min(0.1, (agora - ult) / 1000); ult = agora; quadro++;
+  if (est.anim) {
+    const a = est.anim, k = a.dur ? Math.min(1, (agora - a.t0) / a.dur) : 1, s = k * k * (3 - 2 * k);
+    for (const key of Object.keys(a.fim)) {
+      if (a.fim[key].isVector3) est[key].lerpVectors(a.ini[key], a.fim[key], s);
+      else est[key] = a.ini[key] + (a.fim[key] - a.ini[key]) * s;
+    }
+    if (k >= 1) est.anim = null;
+  }
+  if (est.modo === 'orbitar') {
+    const ce = Math.cos(est.el);
+    camera.position.set(est.alvo.x + est.dist * ce * Math.sin(est.az), est.alvo.y + est.dist * Math.sin(est.el), est.alvo.z + est.dist * ce * Math.cos(est.az));
+    const minY = terrenoY(camera.position) + 3; if (camera.position.y < minY) camera.position.y = minY;
+    camera.lookAt(est.alvo);
+  } else {
+    const run = teclas.has('ShiftLeft') || teclas.has('ShiftRight') ? 3 : 1;
+    const v = VEL[+$('vel').value] * run;
+    fw.set(-Math.sin(est.yaw), 0, -Math.cos(est.yaw)); lado.set(-fw.z, 0, fw.x);
+    let f = (teclas.has('KeyW') || teclas.has('ArrowUp') ? 1 : 0) - (teclas.has('KeyS') || teclas.has('ArrowDown') ? 1 : 0) - joy.y;
+    let l = (teclas.has('KeyD') || teclas.has('ArrowRight') ? 1 : 0) - (teclas.has('KeyA') || teclas.has('ArrowLeft') ? 1 : 0) + joy.x;
+    if (est.modo === 'voar') {
+      tmp.set(-Math.sin(est.yaw) * Math.cos(est.pitch), Math.sin(est.pitch), -Math.cos(est.yaw) * Math.cos(est.pitch));
+      est.pos.addScaledVector(tmp, f * v * dt).addScaledVector(lado, l * v * dt);
+      est.pos.y += ((teclas.has('KeyE') || teclas.has('Space') ? 1 : 0) - (teclas.has('KeyQ') || teclas.has('KeyC') ? 1 : 0) + vert.v) * v * dt;
+      est.pos.y = Math.max(est.pos.y, solo(est.pos.x, -est.pos.z) + 1.2);
+    } else {
+      est.pos.addScaledVector(fw, f * v * dt).addScaledVector(lado, l * v * dt);
+      if (!est.anim) {
+        const alvoY = solo(est.pos.x, -est.pos.z) + est.olho;
+        est.pos.y += (alvoY - est.pos.y) * Math.min(1, dt * 10);
+      }
+    }
+    camera.position.copy(est.pos);
+    camera.rotation.set(est.pitch, est.yaw, 0, 'YXZ');
+  }
+  // sombra acompanha o observador
+  const h = camera.position.y - terrenoY(camera.position);
+  const ext = THREE.MathUtils.clamp(h * 1.6, 90, 700);
+  camera.getWorldDirection(tmp); tmp.y = 0; tmp.normalize();
+  const centro = est.modo === 'orbitar' ? est.alvo.clone() : camera.position.clone().addScaledVector(tmp, ext * 0.6);
+  const sc = sol.shadow.camera;
+  if (sc.right !== ext) { sc.left = -ext; sc.right = ext; sc.top = ext; sc.bottom = -ext; sc.near = 1; sc.far = 3000; sc.updateProjectionMatrix(); }
+  sol.target.position.copy(centro); sol.position.copy(centro).addScaledVector(solDir, 1200);
+  ceu.position.copy(camera.position);
+  renderer.render(scene, camera);
+
+  if (quadro % 4 === 0) {
+    const x = camera.position.x, y = -camera.position.z;
+    $('r-e').textContent = fmt(C.origem[0] + x, 1); $('r-n').textContent = fmt(C.origem[1] + y, 1);
+    $('r-z').textContent = fmt(camera.position.y, 1);
+    camera.getWorldDirection(tmp);
+    const az = (Math.atan2(tmp.x, -tmp.z) * 180 / Math.PI + 360) % 360;
+    $('r-rumo').textContent = RUMOS[Math.round(az / 45) % 8] + ' ' + fmt(az) + '°';
+    desenhaMapa();
+  }
+  requestAnimationFrame(laco);
+}
+$('ajuda').innerHTML = ajuda.orbitar;
+est.modo = 'orbitar';
+{ const [p, t] = C.vistas['Aérea das vias']; const de = P(p[0], p[1], cota(p)), para = P(t[0], t[1], cota(t)); const off = de.clone().sub(para);
+  Object.assign(est, { dist: off.length(), az: Math.atan2(off.x, off.z), el: Math.asin(off.y / off.length()) }); est.alvo.copy(para); }
+$('carga').hidden = true;
+canvas.focus();
+requestAnimationFrame(laco);
+</script>
