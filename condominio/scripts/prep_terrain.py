@@ -119,7 +119,7 @@ while len(trees) < 24000:
     r, c = int((y + HALF) / R8), int((x + HALF) / R8)
     if excl_m[r, c]:
         continue
-    p = np.clip((score[r, c] - 0.9) * 1.4, 0, 1) * np.clip(0.55 + 0.35 * dens[r, c], 0, 1)
+    p = np.clip((score[r, c] - 0.2) * 1.6, 0, 1) * np.clip(0.55 + 0.35 * dens[r, c], 0, 1)
     if rng.random() < p:
         trees.append((round(float(x), 1), round(float(y), 1)))
 # árvores isoladas no campo (paisagem típica do planalto)

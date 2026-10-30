@@ -183,6 +183,22 @@ def terrain_material():
     wav.inputs['Distortion'].default_value = 0.0
     fcol = mix(fcol, mix(fcol, (0, 0, 0, 1), 0.25), mr(wav.outputs[1], 0.4, 0.6))
     col = mix(col, mix(fcol, col, 0.35), math_('MULTIPLY', wfar, 0.6))
+    cob = J.get('cobertura')
+    if cob and os.path.exists(f'{D}/cobertura.png'):
+        mpc = N.new('ShaderNodeMapping'); L(obj, mpc.inputs[0])
+        sx, sy = cob['xmax'] - cob['xmin'], cob['ymax'] - cob['ymin']
+        mpc.inputs['Location'].default_value = (-cob['xmin'] / sx, -cob['ymin'] / sy, 0)
+        mpc.inputs['Scale'].default_value = (1 / sx, 1 / sy, 1)
+        ti = N.new('ShaderNodeTexImage'); ti.image = bpy.data.images.load(os.path.abspath(f'{D}/cobertura.png'))
+        ti.extension = 'EXTEND'; ti.interpolation = 'Cubic'
+        L(mpc.outputs[0], ti.inputs[0])
+        cimg = N.new('ShaderNodeMix'); cimg.data_type = 'RGBA'; cimg.blend_type = 'MULTIPLY'
+        cimg.inputs[0].default_value = 1.0; L(ti.outputs[0], cimg.inputs[6]); L(cc.outputs[0], cimg.inputs[7])
+        # dentro da imagem (com transição de 80 m nas bordas); a clareira do terreno mantém o campo procedural
+        dx1 = mr(z.outputs[0], cob['xmin'], cob['xmin'] + 80); dx2 = mr(z.outputs[0], cob['xmax'], cob['xmax'] - 80)
+        dy1 = mr(z.outputs[1], cob['ymin'], cob['ymin'] + 80); dy2 = mr(z.outputs[1], cob['ymax'], cob['ymax'] - 80)
+        inside = math_('MINIMUM', math_('MINIMUM', dx1, dx2), math_('MINIMUM', dy1, dy2))
+        col = mix(col, mix(cimg.outputs[2], col, 0.25), math_('MULTIPLY', inside, 0.8))
     L(col, bsdf.inputs['Base Color'])
     # relevo fino
     nm = tex(g + '_NormalGL.jpg', 2.6, noncolor=True)
@@ -218,6 +234,14 @@ if '--sem-vias' not in FLAGS and os.path.exists(f'{D}/vias.npz'):
     import build_vias
     G = np.load(f'{D}/greide_vias.npy').astype(np.float64)
     build_vias.build(D, lambda x, y: _bil(G, X1, Y1, R1, x, y), C.coll, mat)
+
+# casas dos bairros vizinhos (contexto, a partir da imagem aérea)
+if '--sem-casas' not in FLAGS and J.get('casas'):
+    import build_casas
+    build_casas.build(J['casas'], height, C.coll)
+if '--sem-contexto' not in FLAGS:
+    import build_contexto
+    build_contexto.build(J, height, C.coll)
 
 # perímetro do terreno (linha de demarcação sobre o terreno)
 if '--sem-perimetro' not in FLAGS:
@@ -260,17 +284,21 @@ if '--sem-arvores' not in FLAGS:
     V.tint_leaves(trees[1], (0.6, 0.8, 0.55))
     arauc = [V.araucaria_model(10 + i, h) for i, h in enumerate((17, 20, 23))]
     allk = trees + arauc
-    for c in allk:
+    # o Collection Info (Separate Children) ordena os filhos pelo nome: prefixo garante o índice
+    for i, c in enumerate(allk):
         if c.name in lib.children:
             lib.children.unlink(c)
+        c.name = f'k{i}_{c.name}'
         kinds.children.link(c)
     if '_tmp_veg' in bpy.data.collections:
         bpy.data.collections.remove(bpy.data.collections['_tmp_veg'])
     T = np.array(J['arvores'])
     n = len(T)
     rr = np.random.default_rng(11)
-    kind = np.where(rr.random(n) < 0.30, rr.integers(3, 6, n), rr.integers(0, 3, n))
-    scl = np.where(kind >= 3, rr.uniform(0.75, 1.15, n), rr.uniform(1.4, 2.6, n))
+    kind = np.where(rr.random(n) < 0.12, rr.integers(3, 6, n), rr.integers(0, 3, n))
+    # modelos Poly Haven têm 3,4–5 m: escala para 14–20 m (mata nativa); araucárias 17–23 m
+    lo = np.array([2.9, 4.2, 3.0, 0.75, 0.75, 0.75])[kind]; hi = np.array([4.0, 5.6, 4.2, 1.15, 1.15, 1.15])[kind]
+    scl = rr.uniform(lo, hi)
     z = height(T[:, 0], T[:, 1]) - 0.3
     me = bpy.data.meshes.new('pts_arvores')
     me.vertices.add(n); me.vertices.foreach_set('co', np.c_[T, z].ravel().astype(np.float32))
@@ -335,9 +363,9 @@ CAMS = {
     'aerea_norte':    ((120, 900, 260), (-30, -40, 0), 35, 'P'),
     'aerea_leste':    ((480, 60, 90), (-20, 20, 0), 30, 'P'),
     'drone_alto':     ((300, -380, 650), (-15, 30, 0), 30, 'P'),
-    'mirante_topo':   ((45, -125, 1.65), (420, -40, 70), 24, 'P'),
-    'acesso_norte':   ((-60, 215, 1.65), (-20, -100, 1.0), 24, 'P'),
-    'vale_leste':     ((260, -40, 1.65), (-20, 10, 40), 24, 'P'),
+    'clareira_topo':  ((-20, -212, 1.65), (-80, 60, 1.0), 24, 'P'),
+    'acesso_norte':   ((-92, 168, 1.65), (-60, -100, 1.0), 24, 'P'),
+    'drone_leste':    ((280, 60, 75), (-50, -120, 0), 28, 'P'),
     'rua_acesso':     ((-86, 118, 1.65), (-62, 0, 0.8), 26, 'P'),
     'rua_quadras':    ((14, -128, 1.65), (-45, -204, 0.6), 24, 'P'),
     'aerea_vias':     ((170, -330, 140), (-45, -90, 0), 30, 'P'),

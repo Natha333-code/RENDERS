@@ -1,4 +1,4 @@
-"""Pavimentação: pista em asfalto (CBUQ), passeios em paver de concreto intertravado,
+"""Pavimentação: pista e passeios em paver de concreto intertravado (pista cinza escuro, passeio claro),
 meio-fio em concreto (espelho de 15 cm) e canteiros gramados – geometria do DWG (prep_vias.py)."""
 import bpy
 import numpy as np
@@ -8,9 +8,9 @@ from lib_common import TEX
 ALTURA_MF = 0.15
 
 
-def asfalto():
-    mat = M.pbr('asfalto', f'{TEX}/Asphalt031', scale=3.0, tint=(0.17, 0.17, 0.18), macro=0.15, rough_mul=1.1)
-    return mat
+def paver_pista():
+    # bloco de concreto intertravado cinza (pista), 10x20 cm espinha-de-peixe
+    return M.gen('paver_pista', 'paver_escuro', 4.0, tint=(0.85, 0.85, 0.86), macro=0.10)
 
 
 def mesh_tris(name, T, zfun, dz, mat, col):
@@ -56,7 +56,7 @@ def walls(name, R, Rn, zfun, top, bottom, mat, col):
 def build(D, zfun, coll_fn, campo_mat):
     V = np.load(f'{D}/vias.npz')
     col = coll_fn('Vias')
-    m_asf = asfalto()
+    m_asf = paver_pista()
     m_pav = M.gen('paver_concreto', 'paver_claro', 4.0, tint=(0.72, 0.71, 0.69), macro=0.08)
     m_con = M.pbr('concreto_meiofio', f'{TEX}/Concrete034', scale=2.0, tint=(0.85, 0.85, 0.84), macro=0.06)
     mesh_tris('pista', V['pista'], zfun, 0.0, m_asf, col)
