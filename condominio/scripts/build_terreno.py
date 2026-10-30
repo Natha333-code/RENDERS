@@ -163,7 +163,7 @@ def terrain_material():
     steep = mr(nz.outputs[2], 0.80, 0.62, 0.0, 1.0)
     soilmask = math_('MULTIPLY', steep, mr(noise(6, 6, 0.65).outputs[0], 0.52, 0.64))
     st = tex(s + '_Color.jpg', 3.0)
-    soil = mix(st.outputs[0], (0.55, 0.26, 0.14, 1), 1.0, 'MULTIPLY')
+    soil = mix(st.outputs[0], (0.46, 0.30, 0.22, 1), 1.0, 'MULTIPLY')
     col = mix(col, soil, math_('MULTIPLY', soilmask, 0.85))
     # entorno distante: mosaico de lavouras/pastagens (ilustrativo)
     dist = N.new('ShaderNodeVectorMath'); dist.operation = 'LENGTH'
@@ -182,7 +182,7 @@ def terrain_material():
     wav = N.new('ShaderNodeTexWave'); L(obj, wav.inputs[0]); wav.inputs['Scale'].default_value = 1 / 6.0
     wav.inputs['Distortion'].default_value = 0.0
     fcol = mix(fcol, mix(fcol, (0, 0, 0, 1), 0.25), mr(wav.outputs[1], 0.4, 0.6))
-    col = mix(col, mix(fcol, col, 0.15), math_('MULTIPLY', wfar, 0.85))
+    col = mix(col, mix(fcol, col, 0.35), math_('MULTIPLY', wfar, 0.6))
     L(col, bsdf.inputs['Base Color'])
     # relevo fino
     nm = tex(g + '_NormalGL.jpg', 2.6, noncolor=True)
@@ -212,6 +212,12 @@ bpy.ops.mesh.primitive_plane_add(size=400000, location=(0, 0, J['cota_base'] - 3
 fundo = bpy.context.active_object; fundo.name = 'terreno_fundo'; fundo.data.materials.append(mat)
 for c in fundo.users_collection: c.objects.unlink(fundo)
 col_t.objects.link(fundo)
+
+# vias (pista, passeios, meio-fio, canteiros) sobre o greide suavizado
+if '--sem-vias' not in FLAGS and os.path.exists(f'{D}/vias.npz'):
+    import build_vias
+    G = np.load(f'{D}/greide_vias.npy').astype(np.float64)
+    build_vias.build(D, lambda x, y: _bil(G, X1, Y1, R1, x, y), C.coll, mat)
 
 # perímetro do terreno (linha de demarcação sobre o terreno)
 if '--sem-perimetro' not in FLAGS:
@@ -332,6 +338,9 @@ CAMS = {
     'mirante_topo':   ((45, -125, 1.65), (420, -40, 70), 24, 'P'),
     'acesso_norte':   ((-60, 215, 1.65), (-20, -100, 1.0), 24, 'P'),
     'vale_leste':     ((260, -40, 1.65), (-20, 10, 40), 24, 'P'),
+    'rua_acesso':     ((-86, 118, 1.65), (-62, 0, 0.8), 26, 'P'),
+    'rua_quadras':    ((14, -128, 1.65), (-45, -204, 0.6), 24, 'P'),
+    'aerea_vias':     ((170, -330, 140), (-45, -90, 0), 30, 'P'),
 }
 cc = C.coll('Cameras')
 for name, (p, t, lens, kind) in CAMS.items():
@@ -351,7 +360,9 @@ if '--sem-grama' not in FLAGS:
         if p[2] < 5:
             d = np.array(t[:2], float) - np.array(p[:2], float); d /= np.linalg.norm(d)
             ground.append((p[0], p[1], d[0], d[1]))
-    build_grama.build(height, H1, X1, Y1, R1, ground, C.coll, grid_mesh)
+    vm = f'{D}/vias_mascara_1m.npy'
+    build_grama.build(height, H1, X1, Y1, R1, ground, C.coll, grid_mesh,
+                      mask=np.load(vm) if os.path.exists(vm) else None)
     lc = bpy.context.view_layer.layer_collection.children.get('_assets')
     if lc: lc.exclude = True
 
@@ -371,14 +382,14 @@ sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Medium H
 r.image_settings.file_format = 'PNG'
 # perspectiva aérea (névoa) só na geometria
 vl = sc.view_layers[0]; vl.use_pass_mist = True; vl.use_pass_environment = True
-w.mist_settings.start = 300; w.mist_settings.depth = 30000; w.mist_settings.falloff = 'INVERSE_QUADRATIC'
+w.mist_settings.start = 300; w.mist_settings.depth = 14000; w.mist_settings.falloff = 'QUADRATIC'
 r.film_transparent = True
 sc.use_nodes = True
 ct = sc.node_tree
 for n in list(ct.nodes): ct.nodes.remove(n)
 rl = ct.nodes.new('CompositorNodeRLayers')
 mix = ct.nodes.new('CompositorNodeMixRGB'); mix.inputs[2].default_value = (0.72, 0.78, 0.86, 1)
-mm = ct.nodes.new('CompositorNodeMath'); mm.operation = 'MULTIPLY'; mm.inputs[1].default_value = 0.85
+mm = ct.nodes.new('CompositorNodeMath'); mm.operation = 'MULTIPLY'; mm.inputs[1].default_value = 0.6
 ct.links.new(rl.outputs['Mist'], mm.inputs[0]); ct.links.new(mm.outputs[0], mix.inputs[0])
 ct.links.new(rl.outputs['Image'], mix.inputs[1])
 sa = ct.nodes.new('CompositorNodeSetAlpha')

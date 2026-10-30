@@ -69,7 +69,7 @@ def clump(name, n_blades, hmin, hmax, spread, mat, col):
     return ob
 
 
-def build(height_fn, H1, X1, Y1, R1, cams, coll_fn, grid_mesh, radius=85.0, dens_max=55.0):
+def build(height_fn, H1, X1, Y1, R1, cams, coll_fn, grid_mesh, radius=85.0, dens_max=55.0, mask=None):
     """cams: lista de (x, y, dir_x, dir_y) das câmeras ao nível do chão."""
     lib = coll_fn('_assets')
     gcol = coll_fn('_grama', lib)
@@ -99,6 +99,13 @@ def build(height_fn, H1, X1, Y1, R1, cams, coll_fn, grid_mesh, radius=85.0, dens
     for x, y, dx, dy in cams:
         dmin = np.minimum(dmin, np.hypot(co[:, 0] - x, co[:, 1] - y))
     dens = np.clip(1 - dmin / radius, 0, 1) ** 1.6
+    if mask is not None:   # sem grama sobre pista/passeios (máscara dilatada 1 m)
+        mk = mask.copy()
+        for _ in range(2):
+            mk[1:] |= mk[:-1].copy(); mk[:-1] |= mk[1:].copy(); mk[:, 1:] |= mk[:, :-1].copy(); mk[:, :-1] |= mk[:, 1:].copy()
+        ci = np.clip(np.round((co[:, 0] - X1) / R1).astype(int), 0, mask.shape[1] - 1)
+        ri = np.clip(np.round((co[:, 1] - Y1) / R1).astype(int), 0, mask.shape[0] - 1)
+        dens = np.where(mk[ri, ci], 0.0, dens)
     a = me.attributes.new('dens', 'FLOAT', 'POINT'); a.data.foreach_set('value', dens.astype(np.float32))
     me_ob.hide_render = False
     # geometry nodes: distribui touceiras com densidade decrescente
